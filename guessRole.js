@@ -34,25 +34,23 @@ const tankBosses = [
   'Qadim the Peerless', // different but no
 ];
 
-function guessRole(log, player) {
+export default function guessRole(log, player) {
   let isHeal = player.healing > 4;
   let isTank = player.toughness > 1 && tankBosses.includes(log.fightName);
   let isBoon = quickness(player) > 10 || alacrity(player) > 10;
   let dpsAll = player.dpsAll[0];
   let isPower = dpsAll.condiDps <= dpsAll.powerDps;
   let role = player.profession;
-  let dType = isPower ? 'P' : 'C';
+  let dType = isPower ? 'Power' : 'Condition';
 
   if (isTank) {
-    return `T ${role}`;
+    return `Tank ${role}`;
   }
   if (isHeal) {
-    return `H ${role}`;
+    return `Heal ${role}`;
   }
   if (isBoon) {
-    return `${dType} B ${role}`;
+    return `${dType} Boon ${role}`;
   }
   return `${dType} ${role}`;
 }
-
-module.exports = guessRole;

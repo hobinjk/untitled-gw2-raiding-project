@@ -1,71 +1,25 @@
-const fs = require('fs');
-const path = require('path');
-const express = require('express');
+import express from 'express';
+
+
+import PGDatabase from './db/postgres.js';
+import StatsModel from './models/StatsModel.js';
+import APIRouter from './routes/APIRouter.js';
+
 const app = express();
+// const logsDir = '../arcdps.cbtlogs';
+const db = new PGDatabase();
 
-const logsDir = '../arcdps.cbtlogs';
-const guessRole = require('./guessRole.js');
+async function startServer() {
+  // await db.create();
+  let statsModel = new StatsModel(db);
+  // await statsModel.readLogs(logsDir);
 
-class StatsModel {
-  constructor() {
-    this.dpsStats = [];
-  }
-
-  readLogs(dirPath) {
-    let dirents = fs.readdirSync(dirPath, {withFileTypes: true});
-    for (let dirent of dirents) {
-      let logPath = path.join(dirPath, dirent.name);
-      if (dirent.isDirectory()) {
-        this.readLogs(logPath);
-        continue;
-      }
-      if (!dirent.name.endsWith('.json')) {
-        continue;
-      }
-      let contents = fs.readFileSync(logPath);
-      this.addLog(JSON.parse(contents));
-    }
-  }
-
-  addLog(log) {
-    if (!log.success) {
-      return;
-    }
-
-    for (let player of log.players) {
-      this.dpsStats.push({
-        fightName: log.fightName,
-        target: player.dpsTargets[0][0].dps,
-        all: player.dpsAll[0].dps,
-        account: player.account,
-        role: guessRole(log, player),
-      });
-    }
-  }
+  console.log('yeah I read the logs');
+  app.use('/api/v0', APIRouter.create(statsModel));
 }
-
-let statsModel = new StatsModel();
-statsModel.readLogs(logsDir);
-
-app.get('/stats', (req, res) => {
-  console.log(req.query);
-  let query = {
-    fightName: req.query.fightName,
-    role: req.query.role,
-    account: req.query.account,
-  };
-
-  res.json(statsModel.dpsStats.filter((stat) => {
-    for (let key in query) {
-      if (query[key] && stat[key] !== query[key]) {
-        return false;
-      }
-    }
-    return true;
-  }));
-});
-
 app.use('/', express.static('static'));
 
 app.listen(31337);
 console.log('http://localhost:31337');
+
+startServer();

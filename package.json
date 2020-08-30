@@ -1,0 +1,22 @@
+{
+  "name": "raidcleanser",
+  "version": "0.1.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-promise-router": "^4.0.1",
+    "pg": "^8.3.2"
+  },
+  "devDependencies": {
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.7.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "hobinjk@gmail.com",
+  "license": "MIT",
+  "type": "module"
+}
