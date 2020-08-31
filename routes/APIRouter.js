@@ -8,6 +8,8 @@ export function create(statsModel) {
       fightName: req.query.fightName,
       role: req.query.role,
       account: req.query.account,
+      order: req.query.order,
+      success: req.query.success,
     };
 
     res.json(statsModel.dpsStats.filter((stat) => {
@@ -30,43 +32,15 @@ export function create(statsModel) {
       fightName: req.query.fightName,
       role: req.query.role,
       account: req.query.account,
+      order: req.query.order,
+      success: req.query.success,
     };
     let page = {
-      start: req.query.start || 0,
+      start: parseInt(req.query.start) || 0,
       limit: 40,
     };
 
     res.json(await statsModel.db.filterLogsMetadata(query, page));
-    // logs.filter((log) => {
-    //   if (query.fightName && query.fightName !== log.fightName) {
-    //     return false;
-    //   }
-    //   if (query.role) {
-    //     let anyOfRole = false;
-    //     for (let player of log.players) {
-    //       if (player.role === query.role) {
-    //         anyOfRole = true;
-    //         break;
-    //       }
-    //     }
-    //     if (!anyOfRole) {
-    //       return false;
-    //     }
-    //   }
-    //   if (query.account) {
-    //     let anyOfAcc = false;
-    //     for (let player of log.players) {
-    //       if (player.account === query.account) {
-    //         anyOfAcc = true;
-    //         break;
-    //       }
-    //     }
-    //     if (!anyOfAcc) {
-    //       return false;
-    //     }
-    //   }
-    //   return true;
-    // }));
   });
   return APIRouter;
 }
