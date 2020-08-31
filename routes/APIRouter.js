@@ -31,8 +31,12 @@ export function create(statsModel) {
       role: req.query.role,
       account: req.query.account,
     };
+    let page = {
+      start: req.query.start || 0,
+      limit: 40,
+    };
 
-    res.json(await statsModel.db.filterLogsMetadata(query));
+    res.json(await statsModel.db.filterLogsMetadata(query, page));
     // logs.filter((log) => {
     //   if (query.fightName && query.fightName !== log.fightName) {
     //     return false;

@@ -10,6 +10,7 @@ export default class PGDatabase {
 
   async create() {
     await this.pool.query(`drop index if exists logs_fightname_idx`);
+    await this.pool.query(`drop index if exists logs_timestartstd_idx`);
     await this.pool.query(`drop table if exists dps_stats`);
     await this.pool.query(`drop table if exists players_to_logs`);
     await this.pool.query(`drop table if exists players`);
@@ -36,6 +37,7 @@ export default class PGDatabase {
     )`);
 
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_fightname_idx ON logs ((data -> 'fightName'))`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_timestartstd_idx ON logs ((data -> 'timeStartStd'))`);
   }
 
   async insertLog(log) {
@@ -74,8 +76,10 @@ export default class PGDatabase {
    * @param {Object} Query
    * @return {Array<Object>} metadata objects of all logs
    */
-  async filterLogsMetadata(query) {
-    const logMeta = `id, data -> 'success' AS success, data -> 'fightName' AS fightName, data -> 'timeStartStd' AS timeStart, data -> 'duration' AS duration, (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players FROM logs`;
+  async filterLogsMetadata(query, page = {start: 0, limit: 20}) {
+    const logMeta = `id, data -> 'success' AS success, data -> 'fightName' AS fight_name, data -> 'timeStartStd' AS time_start, data -> 'duration' AS duration, (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players FROM logs`;
+
+    const orderLimitOffset = `ORDER BY data -> 'timeStartStd' LIMIT ${page.limit} OFFSET ${page.start}`;
 
     if (query.account) {
       // do some nonsense
@@ -89,16 +93,25 @@ export default class PGDatabase {
       const playerId = playerRes.rows[0].id;
 
       let logs = await this.pool.query(
-        `SELECT ${logMeta} WHERE id IN (SELECT log_id FROM players_to_logs WHERE player_id = $1)`,
+        `SELECT ${logMeta} WHERE id IN (SELECT log_id FROM players_to_logs WHERE player_id = $1) ${orderLimitOffset}`,
         [playerId]);
-      return logs.rows;
+      return {
+        logs: logs.rows,
+        page,
+      };
     } else if (query.fightName) {
-      let logs = await this.pool.query(`SELECT ${logMeta} WHERE data -> 'fightName' = $1`,
+      let logs = await this.pool.query(`SELECT ${logMeta} WHERE data -> 'fightName' = $1 ${orderLimitOffset}`,
                                        [JSON.stringify(query.fightName)]);
-      return logs.rows;
+      return {
+        logs: logs.rows,
+        page,
+      };
     } else {
-      let logs = await this.pool.query(`SELECT ${logMeta}`);
-      return logs.rows;
+      let logs = await this.pool.query(`SELECT ${logMeta} ${orderLimitOffset}`);
+      return {
+        logs: logs.rows,
+        page,
+      };
     }
   }
 
