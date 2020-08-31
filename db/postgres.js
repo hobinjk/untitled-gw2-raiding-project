@@ -9,16 +9,27 @@ export default class PGDatabase {
   }
 
   async create() {
-    await this.pool.query(`drop index if exists logs_fightname_idx`);
-    await this.pool.query(`drop index if exists logs_timestartstd_idx`);
+    await this.pool.query(`drop index if exists logs_meta_fight_name_idx`);
+    await this.pool.query(`drop index if exists logs_meta_time_start_idx`);
+    await this.pool.query(`drop index if exists logs_meta_duration_ms_idx`);
     await this.pool.query(`drop table if exists dps_stats`);
     await this.pool.query(`drop table if exists players_to_logs`);
     await this.pool.query(`drop table if exists players`);
+    await this.pool.query(`drop table if exists logs_meta`);
     await this.pool.query(`drop table if exists logs`);
 
     await this.pool.query(`CREATE TABLE IF NOT EXISTS logs (
       id BIGSERIAL PRIMARY KEY,
       data jsonb not null
+    )`);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS logs_meta (
+      log_id BIGSERIAL REFERENCES logs(id),
+      success boolean,
+      fight_name VARCHAR(64) NOT NULL,
+      time_start VARCHAR(64) NOT NULL,
+      duration VARCHAR(16) NOT NULL,
+      duration_ms integer,
+      players jsonb
     )`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS players(
       id BIGSERIAL PRIMARY KEY,
@@ -36,8 +47,9 @@ export default class PGDatabase {
       all_dps REAL
     )`);
 
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_fightname_idx ON logs ((data -> 'fightName'))`);
-    await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_timestartstd_idx ON logs ((data -> 'timeStartStd'))`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_fight_name_idx ON logs_meta (fight_name)`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_time_start_idx ON logs_meta (time_start)`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_duration_ms_idx ON logs_meta (duration_ms)`);
   }
 
   async insertLog(log) {
@@ -45,6 +57,11 @@ export default class PGDatabase {
       'INSERT INTO logs (data) VALUES ($1) RETURNING (id)',
       [log]);
     let logId = res.rows[0].id;
+
+    await this.pool.query(
+      `INSERT INTO logs_meta SELECT id as log_id, (data -> 'success')::boolean AS success, data ->> 'fightName' AS fight_name, data ->> 'timeStartStd' AS time_start, data ->> 'duration' AS duration, (data -> 'phases' -> 0 -> 'end')::int as duration_ms, (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players FROM logs WHERE id = $1`,
+      [logId]);
+
     for (const player of log.players) {
       let existingPlayer = await this.pool.query(
         'SELECT (id) FROM players WHERE account = $1',
@@ -77,9 +94,13 @@ export default class PGDatabase {
    * @return {Array<Object>} metadata objects of all logs
    */
   async filterLogsMetadata(query, page = {start: 0, limit: 20}) {
-    const logMeta = `id, data -> 'success' AS success, data -> 'fightName' AS fight_name, data -> 'timeStartStd' AS time_start, data -> 'duration' AS duration, (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players FROM logs`;
+    const logMeta = `* FROM logs_meta`;
 
-    const orderLimitOffset = `ORDER BY data -> 'timeStartStd' LIMIT ${page.limit} OFFSET ${page.start}`;
+    const order = query.order === 'duration' ? 'duration_ms' : 'time_start';
+    const orderLimitOffset = `ORDER BY ${order} LIMIT ${page.limit} OFFSET ${page.start}`;
+
+    let conditions = [];
+    let args = [];
 
     if (query.account) {
       // do some nonsense
@@ -92,22 +113,31 @@ export default class PGDatabase {
       }
       const playerId = playerRes.rows[0].id;
 
-      let logs = await this.pool.query(
-        `SELECT ${logMeta} WHERE id IN (SELECT log_id FROM players_to_logs WHERE player_id = $1) ${orderLimitOffset}`,
-        [playerId]);
-      return {
-        logs: logs.rows,
-        page,
-      };
-    } else if (query.fightName) {
-      let logs = await this.pool.query(`SELECT ${logMeta} WHERE data -> 'fightName' = $1 ${orderLimitOffset}`,
-                                       [JSON.stringify(query.fightName)]);
+      conditions.push(`log_id IN (SELECT log_id FROM players_to_logs WHERE player_id = $${args.length + 1})`);
+      args.push(playerId);
+    }
+
+    if (query.fightName) {
+      conditions.push(`fight_name = $${args.length + 1}`);
+      args.push(query.fightName);
+    }
+
+    if (query.success === 'true' || query.success === 'false') {
+      conditions.push(`success = $${args.length + 1}`);
+      args.push(query.success);
+    }
+
+    if (conditions.length === 0) {
+      let logs = await this.pool.query(`SELECT ${logMeta} ${orderLimitOffset}`);
       return {
         logs: logs.rows,
         page,
       };
     } else {
-      let logs = await this.pool.query(`SELECT ${logMeta} ${orderLimitOffset}`);
+      let where = 'WHERE ' + conditions.join(' AND ');
+      let logs = await this.pool.query(
+        `SELECT ${logMeta} ${where} ${orderLimitOffset}`,
+        args);
       return {
         logs: logs.rows,
         page,
