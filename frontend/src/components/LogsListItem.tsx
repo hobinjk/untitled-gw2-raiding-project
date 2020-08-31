@@ -1,13 +1,15 @@
 import React from 'react';
+import PlayersComposition from './PlayersComposition';
 
 export default function LogsList(props: any) {
-  const { success, fightName, timeStart, duration } = props;
+  const { success, fightName, timeStart, duration, players } = props;
   let dateParts = timeStart.split(' ');
   // let date = new Date(`${dateParts[0]} ${dateParts[1]}${dateParts[2]}`);
   let prettyStart = `${dateParts[0]} ${dateParts[1]}`;
   let durationRe = /((\d+)h )?((\d+)m )?(\d+)s (\d+)ms/;
   let durationParts = durationRe.exec(duration);
   let durPretty = duration;
+  let durPrettyLong = duration;
   if (durationParts) {
     let durHours: string|number = parseInt(durationParts[2] || '0');
     let durMinutes: string|number = parseInt(durationParts[4] || '0');
@@ -16,11 +18,12 @@ export default function LogsList(props: any) {
     if (durMinutes < 10 && durHours > 0) {
       durMinutes = `0${durMinutes}`;
     }
-    if (durSeconds < 10 && (durMinutes > 0 || durHours > 0)) {
+    if (durSeconds < 10) {
       durSeconds = `0${durSeconds}`;
     }
     durPretty = (durHours > 0 ? `${durHours}:` : ``) +
-      `${durMinutes}:${durSeconds}.${durMs}`;
+      `${durMinutes}:${durSeconds}`;
+    durPrettyLong = `${durPretty}.${durMs}`;
   }
 
   return (
@@ -38,7 +41,10 @@ export default function LogsList(props: any) {
         {prettyStart}
       </td>
       <td>
-        {durPretty}
+        <span title={durPrettyLong}>{durPretty}</span>
+      </td>
+      <td>
+        <PlayersComposition players={players} />
       </td>
     </tr>
   );
