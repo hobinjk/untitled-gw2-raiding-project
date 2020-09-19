@@ -153,6 +153,9 @@ export default class PGDatabase {
     let logs = await this.pool.query(
       `SELECT data FROM logs WHERE id = $1`,
       [id]);
+    if (!logs || !logs.rows || !logs.rows.length) {
+      return;
+    }
     return logs.rows[0].data;
   }
 }
