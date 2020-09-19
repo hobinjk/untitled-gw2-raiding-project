@@ -42,6 +42,40 @@ export function create(statsModel) {
 
     res.json(await statsModel.db.filterLogsMetadata(query, page));
   });
+
+  APIRouter.get('/logs/:logId', async (req, res) => {
+    const log = await statsModel.db.getLog(req.params.logId);
+    if (!log) {
+      res.sendStatus(404);
+      return;
+    }
+    res.json(log);
+  });
+
+  APIRouter.get('/logs/stats/:logId', async (req, res) => {
+    const stats = await statsModel.db.getLogStats(req.params.logId);
+    if (!stats) {
+      res.sendStatus(404);
+      return;
+    }
+    res.json(stats);
+  });
+
+  APIRouter.get('/stats/percentiles', async (req, res) => {
+    console.log(req.query);
+    const fightName = req.query.fightName;
+    const role = req.query.role;
+    const targetDps = req.query.targetDps;
+    const allDps = req.query.allDps;
+
+    res.json({
+      targetPercentile: await statsModel.db.getTargetDpsPercentile(
+        fightName, role, targetDps),
+      allPercentile: await statsModel.db.getAllDpsPercentile(
+        fightName, role, allDps),
+    });
+  });
+
   return APIRouter;
 }
 
