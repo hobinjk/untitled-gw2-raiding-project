@@ -158,4 +158,36 @@ export default class PGDatabase {
     }
     return logs.rows[0].data;
   }
+
+  /**
+   * @param {BigSerial} id
+   * @return {Object} raw json data of log
+   */
+  async getLogStats(id) {
+    let dpsStats = await this.pool.query(
+      `SELECT * FROM dps_stats LEFT JOIN players ON players.id = dps_stats.player_id WHERE log_id = $1`,
+      [id]);
+    if (!dpsStats) {
+      return;
+    }
+    return dpsStats.rows;
+  }
+
+  async getTargetDpsPercentile(fightName, role, targetDps) {
+    const res = await this.pool.query(
+      `select percent_rank($1) within group (order by target_dps asc)
+      from dps_stats left join logs_meta on dps_stats.log_id = logs_meta.log_id
+      where logs_meta.fight_name = $2 and dps_stats.role = $3`,
+      [targetDps, fightName, role]);
+    return res.rows[0].percent_rank * 100;
+  }
+
+  async getAllDpsPercentile(fightName, role, dps) {
+    const res = await this.pool.query(
+      `select percent_rank($1) within group (order by all_dps asc)
+      from dps_stats left join logs_meta on dps_stats.log_id = logs_meta.log_id
+      where logs_meta.fight_name = $2 and dps_stats.role = $3`,
+      [dps, fightName, role]);
+    return res.rows[0].percent_rank * 100;
+  }
 }
