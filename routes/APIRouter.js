@@ -37,7 +37,7 @@ export function create(statsModel) {
     };
     let page = {
       start: parseInt(req.query.start) || 0,
-      limit: 40,
+      limit: parseInt(req.query.limit) || 40,
     };
 
     res.json(await statsModel.db.filterLogsMetadata(query, page));
