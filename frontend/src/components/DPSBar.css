@@ -1,0 +1,30 @@
+.rarity-junk {
+  color: hsl(0, 0%, 71%);
+}
+
+.rarity-basic {
+}
+
+.rarity-fine {
+  color: #5d98ef;
+}
+
+.rarity-masterwork {
+  color: #509642;
+}
+
+.rarity-rare {
+  color: #f8cd56;
+}
+
+.rarity-exotic {
+  color: #f29d39;
+}
+
+.rarity-ascended {
+  color: #ed5688;
+}
+
+.rarity-legendary {
+  color: #8e42f5;
+}

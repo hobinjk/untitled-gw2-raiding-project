@@ -8,6 +8,8 @@ import {
 import './App.css';
 import Home from './components/Home';
 import LogsView from './components/LogsView';
+import LogView from './components/LogView';
+import LeaderboardView from './components/LeaderboardView';
 
 function App() {
   return (
@@ -25,6 +27,7 @@ function App() {
         <div className="navbar-menu">
           <div className="navbar-start">
             <Link className="navbar-item" to="/logs">Logs</Link>
+            <Link className="navbar-item" to="/leaderboard">Leaderboard</Link>
           </div>
         </div>
       </nav>
@@ -34,8 +37,14 @@ function App() {
           <Route exact path="/">
             <Home />
           </Route>
+          <Route path="/logs/:logId">
+            <LogView />
+          </Route>
           <Route path="/logs">
             <LogsView />
+          </Route>
+          <Route path="/leaderboard">
+            <LeaderboardView />
           </Route>
         </Switch>
       </main>

@@ -33,12 +33,14 @@ export default function LogsList(props: any) {
           <th>
             Players
           </th>
+          <th>
+          </th>
         </tr>
       </thead>
       <tbody>
       {logs.map((log: any) => {
         return (
-          <LogsListItem key={log.id} success={log.success}
+          <LogsListItem key={log.log_id} logId={log.log_id} success={log.success}
             fightName={log.fight_name} timeStart={log.time_start}
             duration={log.duration} players={log.players} />
         );

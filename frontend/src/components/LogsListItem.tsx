@@ -1,8 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import PlayersComposition from './PlayersComposition';
 
-export default function LogsList(props: any) {
-  const { success, fightName, timeStart, duration, players } = props;
+export default function LogsListItem(props: any) {
+  const { logId, success, fightName, timeStart, duration, players } = props;
   let dateParts = timeStart.split(' ');
   // let date = new Date(`${dateParts[0]} ${dateParts[1]}${dateParts[2]}`);
   let prettyStart = `${dateParts[0]} ${dateParts[1]}`;
@@ -45,6 +46,9 @@ export default function LogsList(props: any) {
       </td>
       <td>
         <PlayersComposition players={players} />
+      </td>
+      <td>
+        <Link to={`/logs/${logId}`}>More</Link>
       </td>
     </tr>
   );
