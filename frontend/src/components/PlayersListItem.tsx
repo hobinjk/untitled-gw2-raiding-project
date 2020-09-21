@@ -7,8 +7,6 @@ import './PlayersListItem.css';
 export default function PlayersListItem(props: any) {
   const { player, log, stats } = props;
 
-  console.log(stats);
-
   return (
     <tr>
       <td>
@@ -19,7 +17,7 @@ export default function PlayersListItem(props: any) {
         <DPSBar player={player} log={log} stats={stats} />
       </td>
       <td>
-        <BoonStats player={player} stats={stats} />
+        <BoonStats player={player} log={log} stats={stats} />
       </td>
       <td>
         <MechanicStats player={player} log={log} stats={stats} />
