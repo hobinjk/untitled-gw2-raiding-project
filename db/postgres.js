@@ -1,3 +1,10 @@
+import {
+  quicknessGeneration,
+  alacrityGeneration,
+  mightGeneration,
+  buffIds,
+} from '../guessRole.js';
+
 import pg from 'pg';
 const {Pool} = pg;
 
@@ -13,6 +20,8 @@ export default class PGDatabase {
     await this.pool.query(`drop index if exists logs_meta_time_start_idx`);
     await this.pool.query(`drop index if exists logs_meta_duration_ms_idx`);
     await this.pool.query(`drop table if exists dps_stats`);
+    await this.pool.query(`drop table if exists boon_output_stats`);
+    await this.pool.query(`drop table if exists mechanics_stats`);
     await this.pool.query(`drop table if exists players_to_logs`);
     await this.pool.query(`drop table if exists players`);
     await this.pool.query(`drop table if exists logs_meta`);
@@ -45,6 +54,19 @@ export default class PGDatabase {
       role VARCHAR(64) NOT NULL,
       target_dps REAL,
       all_dps REAL
+    )`);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS boon_output_stats(
+      log_id BIGSERIAL REFERENCES logs(id),
+      player_id BIGSERIAL REFERENCES players(id),
+      role VARCHAR(64) NOT NULL,
+      buff_id integer,
+      output real
+    )`);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS mechanics_stats(
+      log_id BIGSERIAL REFERENCES logs(id),
+      player_id BIGSERIAL REFERENCES players(id),
+      mechanic_name VARCHAR(64) NOT NULL,
+      occurrences integer
     )`);
 
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_fight_name_idx ON logs_meta (fight_name)`);
@@ -86,6 +108,48 @@ export default class PGDatabase {
         `INSERT INTO dps_stats (log_id, player_id, role, target_dps, all_dps)
         VALUES ($1, $2, $3, $4, $5)`,
         [logId, playerId, player.role, targetDps, allDps]);
+
+      if (player.role.includes('Boon') ||
+          player.role.includes('Heal') ||
+          player.role.includes('Tank')) {
+        let might = mightGeneration(player);
+        let quickness = quicknessGeneration(player);
+        let alacrity = alacrityGeneration(player);
+        if (might > 3) {
+          await this.pool.query(
+            `INSERT INTO boon_output_stats (log_id, player_id, role, buff_id, output)
+            VALUES ($1, $2, $3, $4, $5)`,
+            [logId, playerId, player.role, buffIds.might, might]);
+        }
+        if (quickness > 3) {
+          await this.pool.query(
+            `INSERT INTO boon_output_stats (log_id, player_id, role, buff_id, output)
+            VALUES ($1, $2, $3, $4, $5)`,
+            [logId, playerId, player.role, buffIds.quickness, quickness]);
+        }
+        if (alacrity > 3) {
+          await this.pool.query(
+            `INSERT INTO boon_output_stats (log_id, player_id, role, buff_id, output)
+            VALUES ($1, $2, $3, $4, $5)`,
+            [logId, playerId, player.role, buffIds.alacrity, alacrity]);
+        }
+      }
+
+      if (!log.fightName.includes('Golem')) {
+        for (let mechanic of log.mechanics) {
+          let occurrences = 0;
+          for (let occurrence of mechanic.mechanicsData) {
+            if (occurrence.actor === player.name) {
+              occurrences += 1;
+            }
+          }
+
+          await this.pool.query(
+            `INSERT INTO mechanics_stats (log_id, player_id, mechanic_name, occurrences)
+            VALUES ($1, $2, $3, $4)`,
+            [logId, playerId, mechanic.name, occurrences]);
+        }
+      }
     }
   }
 
@@ -190,4 +254,23 @@ export default class PGDatabase {
       [dps, fightName, role]);
     return res.rows[0].percent_rank * 100;
   }
+
+  async getBuffOutputPercentile(fightName, role, buffId, output) {
+    const res = await this.pool.query(
+      `select percent_rank($1) within group (order by output asc)
+      from boon_output_stats left join logs_meta on boon_output_stats.log_id = logs_meta.log_id
+      where logs_meta.fight_name = $2 and boon_output_stats.role = $3 and boon_output_stats.buff_id = $4`,
+      [output, fightName, role, buffId]);
+    return res.rows[0].percent_rank * 100;
+  }
+
+  async getMechanicsPercentile(fightName, mechanicName, occurrences) {
+    const res = await this.pool.query(
+      `select percent_rank($1) within group (order by occurrences asc)
+      from mechanics_stats left join logs_meta on mechanics_stats.log_id = logs_meta.log_id
+      where logs_meta.fight_name = $2 and mechanics_stats.mechanic_name = $3`,
+      [occurrences, fightName, mechanicName]);
+    return res.rows[0].percent_rank * 100;
+  }
+
 }

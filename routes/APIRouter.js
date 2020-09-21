@@ -1,4 +1,5 @@
 import Router from 'express-promise-router';
+import {buffIds} from '../guessRole.js';
 
 export function create(statsModel) {
   const APIRouter = new Router();
@@ -61,7 +62,7 @@ export function create(statsModel) {
     res.json(stats);
   });
 
-  APIRouter.get('/stats/percentiles', async (req, res) => {
+  APIRouter.get('/stats/percentiles/dps', async (req, res) => {
     console.log(req.query);
     const fightName = req.query.fightName;
     const role = req.query.role;
@@ -73,6 +74,36 @@ export function create(statsModel) {
         fightName, role, targetDps),
       allPercentile: await statsModel.db.getAllDpsPercentile(
         fightName, role, allDps),
+    });
+  });
+
+  APIRouter.get('/stats/percentiles/buffOutput', async (req, res) => {
+    console.log(req.query);
+    const fightName = req.query.fightName;
+    const role = req.query.role;
+    const buffName = req.query.buff;
+    const buffId = buffIds[buffName];
+    if (!buffId) {
+      res.sendStatus(404);
+      return;
+    }
+    const output = req.query.output;
+
+    res.json({
+      outputPercentile: await statsModel.db.getBuffOutputPercentile(
+        fightName, role, buffId, output),
+    });
+  });
+
+  APIRouter.get('/stats/percentiles/mechanics', async (req, res) => {
+    console.log(req.query);
+    const fightName = req.query.fightName;
+    const mechanicName = req.query.mechanicName;
+    const occurrences = req.query.occurrences;
+
+    res.json({
+      occurrencesPercentile: await statsModel.db.getMechanicsPercentile(
+        fightName, mechanicName, occurrences),
     });
   });
 

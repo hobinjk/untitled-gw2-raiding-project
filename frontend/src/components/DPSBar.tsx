@@ -41,7 +41,7 @@ export default function DPSBar(props: any) {
       query.set('role', player.role);
       query.set('targetDps', stats.target_dps);
       query.set('allDps', stats.all_dps);
-      const res = await fetch(`/api/v0/stats/percentiles?${query.toString()}`);
+      const res = await fetch(`/api/v0/stats/percentiles/dps?${query.toString()}`);
       const {targetPercentile, allPercentile} = await res.json();
 
       setAppState({

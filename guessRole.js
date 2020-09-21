@@ -9,12 +9,22 @@ function squadBuffGeneration(player, buffId) {
   return data[0].buffData[0].generation;
 }
 
-function quickness(player) {
-  return squadBuffGeneration(player, 1187);
+export const buffIds = {
+  quickness: 1187,
+  alacrity: 30328,
+  might: 740,
+};
+
+export function quicknessGeneration(player) {
+  return squadBuffGeneration(player, buffIds.quickness);
 }
 
-function alacrity(player) {
-  return squadBuffGeneration(player, 30328);
+export function alacrityGeneration(player) {
+  return squadBuffGeneration(player, buffIds.alacrity);
+}
+
+export function mightGeneration(player) {
+  return squadBuffGeneration(player, buffIds.might);
 }
 
 const tankBosses = [
@@ -37,7 +47,8 @@ const tankBosses = [
 export default function guessRole(log, player) {
   let isHeal = player.healing > 4;
   let isTank = player.toughness > 1 && tankBosses.includes(log.fightName);
-  let isBoon = quickness(player) > 10 || alacrity(player) > 10;
+  let isBoon = quicknessGeneration(player) > 10 ||
+    alacrityGeneration(player) > 10;
   let dpsAll = player.dpsAll[0];
   let isPower = dpsAll.condiDps <= dpsAll.powerDps;
   let role = player.profession;
