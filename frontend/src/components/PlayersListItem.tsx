@@ -22,7 +22,7 @@ export default function PlayersListItem(props: any) {
         <BoonStats player={player} stats={stats} />
       </td>
       <td>
-        <MechanicStats player={player} stats={stats} />
+        <MechanicStats player={player} log={log} stats={stats} />
       </td>
     </tr>
   );
