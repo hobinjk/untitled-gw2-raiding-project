@@ -3,8 +3,44 @@ import React from 'react';
 const boringMechanics = {
   'Got up': true,
   'Res': true,
-  'CC': true,
-  'CCed': true,
+  // VG
+  'Green Cast R': true,
+  'Green Cast G': true,
+  'Green Cast B': true,
+  'Invuln Strip': true,
+  // Gorseval
+  // Sabetha
+  // Slothasor
+  // Matthias Gabrel
+  // KC
+  'Rift#': true,
+  // Xera
+  'Button1': true,
+  'Button2': true,
+  'Button3': true,
+  'Shield': true,
+  // Cairn
+  // Mursaat Overseer
+  'Dispel': true,
+  // Samarog
+  'G.Fix': true,
+  'R.Fix': true,
+  // Deimos
+  'Green': true,
+  'TP': true,
+  'DMG Debuff': true,
+  // Soulless Horror
+  // Dhuum
+  // Conjured Amalgamate
+  'Pulverize': true,
+  // Twin Largos
+  'Ken Aura': true,
+  'Nik Aura': true,
+  // Qadim
+  'Claw': true,
+  // Adina
+  // Sabir
+  // Qadim the Peerless
 };
 
 function abbreviate(name: string) {

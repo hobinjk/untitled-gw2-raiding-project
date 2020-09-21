@@ -26,13 +26,27 @@ function LogView() {
 
     const load = async () => {
       const res = await fetch(`/api/v0/logs/${logId}`);
-      const data = await res.json();
+      const log = await res.json();
       const resStats = await fetch(`/api/v0/logs/stats/${logId}`);
       const dataStats = await resStats.json();
 
+      const players: {[name: string]: boolean} = {};
+      for (let player of log.players) {
+        players[player.name] = true;
+      }
+
+      log.mechanics = log.mechanics.filter((mechanic: any) => {
+        for (let occurrence of mechanic.mechanicsData) {
+          if (players.hasOwnProperty(occurrence.actor)) {
+            return true;
+          }
+        }
+        return false;
+      });
+
       setAppState({
         loading: false,
-        log: data,
+        log,
         stats: dataStats,
       });
     };
