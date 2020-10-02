@@ -10,10 +10,16 @@ const app = express();
 // const logsDir = '../arcdps.cbtlogs';
 const db = new PGDatabase();
 
+const create = false;
+
 async function startServer() {
-  // await db.create();
+  if (create) {
+    await db.create();
+  }
   let statsModel = new StatsModel(db);
-  // await statsModel.readLogs(logsDir);
+  if (create) {
+    await statsModel.readLogs('../arcdps.cbtlogs');
+  }
 
   app.use('/api/v0', APIRouter.create(statsModel));
   app.use(express.static(path.join('frontend', 'build')));
