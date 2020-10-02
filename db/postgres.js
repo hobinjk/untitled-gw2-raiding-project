@@ -202,19 +202,23 @@ export default class PGDatabase {
     }
 
     if (conditions.length === 0) {
+      let count = await this.pool.query(`SELECT count(*) from logs_meta`);
       let logs = await this.pool.query(`SELECT ${logMeta} ${orderLimitOffset}`);
       return {
         logs: logs.rows,
         page,
+        count: count.rows[0].count,
       };
     } else {
       let where = 'WHERE ' + conditions.join(' AND ');
+      let count = await this.pool.query(`SELECT count(*) from logs_meta ${where}`, args);
       let logs = await this.pool.query(
         `SELECT ${logMeta} ${where} ${orderLimitOffset}`,
         args);
       return {
         logs: logs.rows,
         page,
+        count: count.rows[0].count,
       };
     }
   }
