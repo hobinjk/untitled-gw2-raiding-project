@@ -15,27 +15,23 @@ type IBoonStatsState = {
 export default function BoonStats(props: any) {
   const { player, log } = props;
 
-  const [mightState, setMightState] = useState<IBoonState>({
-    name: 'Might',
-    value: might(player),
-    percentile: null,
+  const [state, setState] = useState<IBoonStatsState>({
+    might: {
+      name: 'Might',
+      value: might(player),
+      percentile: null,
+    },
+    quickness: {
+      name: 'Quickness',
+      value: quickness(player),
+      percentile: null,
+    },
+    alacrity: {
+      name: 'Alacrity',
+      value: alacrity(player),
+      percentile: null,
+    },
   });
-  const [quicknessState, setQuicknessState] = useState<IBoonState>({
-    name: 'Quickness',
-    value: quickness(player),
-    percentile: null,
-  });
-  const [alacrityState, setAlacrityState] = useState<IBoonState>({
-    name: 'Alacrity',
-    value: alacrity(player),
-    percentile: null,
-  });
-
-  const states = [
-    {state: mightState, setter: setMightState},
-    {state: quicknessState, setter: setQuicknessState},
-    {state: alacrityState, setter: setAlacrityState},
-  ];
 
   const loadPercentile = async (name: string, output: number) => {
     if (output < 10) {
@@ -54,32 +50,37 @@ export default function BoonStats(props: any) {
   };
 
   useEffect(() => {
-    for (let state of states) {
+    for (let key in state) {
       (async () => {
-        const percentile = await loadPercentile(state.state.name, state.state.value);
-        state.setter({
-          name: state.state.name,
-          value: state.state.value,
-          percentile,
+        const percentile = await loadPercentile(state[key].name, state[key].value);
+        setState((prevState) => {
+          return {
+            ...prevState,
+            [key]: {
+              name: prevState[key].name,
+              value: prevState[key].value,
+              percentile,
+            },
+          };
         });
       })();
     }
-  }, states.map(state => state.setter).concat([log.fightName, player.role]));
+  }, []);
 
   return (
     <div>
       <table className="table">
         <tr>
-          {states.map((state) => {
-            return (<td><abbr title={state.state.name}>
-              {state.state.name.charAt(0)}
+          {Object.values(state).map((state) => {
+            return (<td><abbr title={state.name}>
+              {state.name.charAt(0)}
             </abbr></td>);
           })}
         </tr>
         <tr>
-          {states.map((state) => {
+          {Object.values(state).map((state) => {
             return (<td>
-              {makePercentile(state.state.value, state.state.percentile)}
+              {makePercentile(state.value, state.percentile)}
             </td>);
           })}
         </tr>
