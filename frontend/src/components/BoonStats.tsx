@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {quickness, alacrity, might} from '../squadBuffGeneration';
-import rarityForPercentile from '../rarityForPercentile';
+import makePercentile from '../makePercentile';
 
 type IBoonState = {
   name: string,
@@ -11,20 +11,6 @@ type IBoonState = {
 type IBoonStatsState = {
   [name: string]: IBoonState,
 };
-
-function makePercentile(value: number, percentile: number|null) {
-  console.log('makePercentile', value, percentile);
-  if (typeof percentile  === 'number') {
-    const rarity = rarityForPercentile(percentile);
-    return (<span className={`rarity-${rarity}`} title={Math.round(percentile).toString()}>
-      {Math.round(value).toString()}
-    </span>);
-  } else {
-    return (<span className="rarity-junk">
-      {Math.round(value).toString()}
-    </span>);
-  }
-}
 
 export default function BoonStats(props: any) {
   const { player, log } = props;
@@ -98,11 +84,6 @@ export default function BoonStats(props: any) {
           })}
         </tr>
       </table>
-
     </div>
   );
 }
-
-
-
-
