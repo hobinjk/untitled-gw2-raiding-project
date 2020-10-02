@@ -38,6 +38,7 @@ export default class PGDatabase {
       time_start VARCHAR(64) NOT NULL,
       duration VARCHAR(16) NOT NULL,
       duration_ms integer,
+      health_percent_burned real,
       players jsonb
     )`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS players(
@@ -81,7 +82,16 @@ export default class PGDatabase {
     let logId = res.rows[0].id;
 
     await this.pool.query(
-      `INSERT INTO logs_meta SELECT id as log_id, (data -> 'success')::boolean AS success, data ->> 'fightName' AS fight_name, data ->> 'timeStartStd' AS time_start, data ->> 'duration' AS duration, (data -> 'phases' -> 0 -> 'end')::int as duration_ms, (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players FROM logs WHERE id = $1`,
+      `INSERT INTO logs_meta SELECT
+        id as log_id,
+        (data -> 'success')::boolean AS success,
+        data ->> 'fightName' AS fight_name,
+        data ->> 'timeStartStd' AS time_start,
+        data ->> 'duration' AS duration,
+        (data -> 'phases' -> 0 -> 'end')::int as duration_ms,
+        (data -> 'targets' -> 0 ->> 'healthPercentBurned')::real as health_percent_burned,
+        (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players
+      FROM logs WHERE id = $1`,
       [logId]);
 
     for (const player of log.players) {

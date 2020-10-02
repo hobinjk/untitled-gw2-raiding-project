@@ -42,7 +42,8 @@ export default function LogsList(props: any) {
         return (
           <LogsListItem key={log.log_id} logId={log.log_id} success={log.success}
             fightName={log.fight_name} timeStart={log.time_start}
-            duration={log.duration} players={log.players} />
+            duration={log.duration} players={log.players}
+            healthPercentBurned={log.health_percent_burned} />
         );
       })}
       </tbody>

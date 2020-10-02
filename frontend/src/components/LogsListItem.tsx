@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import PlayersComposition from './PlayersComposition';
 
 export default function LogsListItem(props: any) {
-  const { logId, success, fightName, timeStart, duration, players } = props;
+  const { logId, success, fightName, timeStart, duration, players, healthPercentBurned } = props;
   let dateParts = timeStart.split(' ');
   // let date = new Date(`${dateParts[0]} ${dateParts[1]}${dateParts[2]}`);
   let prettyStart = `${dateParts[0]} ${dateParts[1]}`;
@@ -32,7 +32,7 @@ export default function LogsListItem(props: any) {
       <td>
         {success ?
           <span className="icon has-text-success"><i className="fas fa-check"></i></span> :
-          <span className="icon has-text-danger"><i className="fas fa-times"></i></span>
+          <span className="has-text-danger">{Math.ceil(100 - healthPercentBurned)}</span>
         }
       </td>
       <td>
