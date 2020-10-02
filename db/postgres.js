@@ -278,7 +278,7 @@ export default class PGDatabase {
     return res.rows[0].percent_rank * 100;
   }
 
-  async getMechanicsPercentile(fightName, mechanicName, occurrences) {
+  async getMechanicPercentile(fightName, mechanicName, occurrences) {
     const res = await this.pool.query(
       `select percent_rank($1) within group (order by occurrences asc)
       from mechanics_stats left join logs_meta on mechanics_stats.log_id = logs_meta.log_id

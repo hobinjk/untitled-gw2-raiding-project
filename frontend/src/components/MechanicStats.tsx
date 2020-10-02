@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import makePercentile from '../makePercentile';
 
 const boringMechanics = {
   'Got up': true,
@@ -43,6 +44,16 @@ const boringMechanics = {
   // Qadim the Peerless
 };
 
+type IMechanicState = {
+  name: string,
+  value: number,
+  percentile: number|null,
+};
+
+type IMechanicStatsState = {
+  [key: string]: IMechanicState
+};
+
 function abbreviate(name: string) {
   return name.replace(/[^A-Z]/g, '');
 }
@@ -50,41 +61,79 @@ function abbreviate(name: string) {
 export default function MechanicStats(props: any) {
   const { player, log } = props;
 
-  const mechanicsOfPlayer: {[name:string]: any} = {};
+  const [mechanicStatsState, setState] = useState<IMechanicStatsState>((() => {
+    const mechanicStatsState: IMechanicStatsState = {};
 
-  for (let mechanic of log.mechanics) {
-    let times = 0;
-    if (boringMechanics.hasOwnProperty(mechanic.name)) {
-      continue;
-    }
-    if (mechanic.mechanicsData.length === 0) {
-      continue;
-    }
-    for (let occurrence of mechanic.mechanicsData) {
-      if (occurrence.actor === player.name) {
-        times += 1;
+    for (let mechanic of log.mechanics) {
+      let times = 0;
+      if (boringMechanics.hasOwnProperty(mechanic.name)) {
+        continue;
       }
+      if (mechanic.mechanicsData.length === 0) {
+        continue;
+      }
+      for (let occurrence of mechanic.mechanicsData) {
+        if (occurrence.actor === player.name) {
+          times += 1;
+        }
+      }
+      mechanicStatsState[mechanic.name] = {
+        name: mechanic.description,
+        value: times,
+        percentile: null,
+      };
     }
-    mechanicsOfPlayer[mechanic.name] = {
-      times,
-      description: mechanic.description,
-    };
-  }
+
+    return mechanicStatsState;
+  })());
+
+  const loadPercentile = async (name: string, value: number) => {
+    const query = new URLSearchParams();
+    query.set('fightName', log.fightName);
+    query.set('mechanicName', name);
+    query.set('occurrences', value.toString());
+
+    const res = await fetch(`/api/v0/stats/percentiles/mechanic?${query.toString()}`);
+    const percentile: number = (await res.json()).occurrencesPercentile;
+    return percentile;
+  };
+
+  useEffect(() => {
+    for (const name in mechanicStatsState) {
+      (async () => {
+        const stat = mechanicStatsState[name];
+        const percentile = await loadPercentile(name, stat.value);
+        setState((prevState) => {
+          return {
+            ...prevState,
+            [name]: {
+              name: prevState[name].name,
+              value: prevState[name].value,
+              percentile,
+            },
+          };
+        });
+      })();
+    }
+  }, []);
+
 
   return (
     <div>
       <table className="table">
         <tr>
-          {Object.keys(mechanicsOfPlayer).map((name) => {
-            return (<td><abbr title={mechanicsOfPlayer[name].description}>
-              {abbreviate(name)}
-            </abbr></td>);
+          {Object.keys(mechanicStatsState).map((name) => {
+            return (<td>
+              <abbr title={mechanicStatsState[name].name}>
+                {abbreviate(name)}
+              </abbr>
+          </td>);
           })}
         </tr>
         <tr>
-          {Object.keys(mechanicsOfPlayer).map((name) => {
+          {Object.values(mechanicStatsState).map((stat) => {
             return (<td>
-              {mechanicsOfPlayer[name].times}
+              {makePercentile(stat.value, stat.percentile)}
             </td>);
           })}
         </tr>
@@ -92,8 +141,3 @@ export default function MechanicStats(props: any) {
     </div>
   );
 }
-
-
-
-
-

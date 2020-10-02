@@ -95,14 +95,14 @@ export function create(statsModel) {
     });
   });
 
-  APIRouter.get('/stats/percentiles/mechanics', async (req, res) => {
+  APIRouter.get('/stats/percentiles/mechanic', async (req, res) => {
     console.log(req.query);
     const fightName = req.query.fightName;
     const mechanicName = req.query.mechanicName;
     const occurrences = req.query.occurrences;
 
     res.json({
-      occurrencesPercentile: await statsModel.db.getMechanicsPercentile(
+      occurrencesPercentile: await statsModel.db.getMechanicPercentile(
         fightName, mechanicName, occurrences),
     });
   });
