@@ -1,9 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PlayersComposition from './PlayersComposition';
+import makePercentile from '../makePercentile';
+
+type ILogsListItemState = {
+  percentile: number|null,
+};
+
 
 export default function LogsListItem(props: any) {
-  const { logId, success, fightName, timeStart, duration, players, healthPercentBurned } = props;
+  const {
+    logId,
+    success,
+    fightName,
+    timeStart,
+    duration,
+    durationMs,
+    players,
+    healthPercentBurned
+  } = props;
+
+  const [appState, setAppState] = useState<ILogsListItemState>({
+    percentile: null,
+  });
+
   let dateParts = timeStart.split(' ');
   // let date = new Date(`${dateParts[0]} ${dateParts[1]}${dateParts[2]}`);
   let prettyStart = `${dateParts[0]} ${dateParts[1]}`;
@@ -27,6 +47,25 @@ export default function LogsListItem(props: any) {
     durPrettyLong = `${durPretty}.${durMs}`;
   }
 
+  useEffect(() => {
+    if (!success) {
+      return;
+    }
+
+    (async () => {
+      const query = new URLSearchParams();
+      query.set('fightName', fightName);
+      query.set('durationMs', durationMs);
+
+      const res = await fetch(`/api/v0/stats/percentiles/durationMs?${query.toString()}`);
+      const percentile: number = (await res.json()).durationMsPercentile;
+      setAppState({
+        percentile,
+      });
+    })();
+  }, []);
+
+
   return (
     <tr>
       <td>
@@ -42,7 +81,7 @@ export default function LogsListItem(props: any) {
         {prettyStart}
       </td>
       <td>
-        <span title={durPrettyLong}>{durPretty}</span>
+        <span title={durPrettyLong}>{makePercentile(durPretty, appState.percentile, false)}</span>
       </td>
       <td>
         <PlayersComposition players={players} />
