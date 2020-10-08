@@ -107,6 +107,16 @@ export function create(statsModel) {
     });
   });
 
+  APIRouter.get('/stats/percentiles/durationMs', async (req, res) => {
+    const fightName = req.query.fightName;
+    const durationMs = req.query.durationMs;
+
+    res.json({
+      durationMsPercentile: await statsModel.db.getDurationMsPercentile(
+        fightName, durationMs),
+    });
+  });
+
   return APIRouter;
 }
 

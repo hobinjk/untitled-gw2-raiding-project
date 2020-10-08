@@ -287,4 +287,12 @@ export default class PGDatabase {
     return res.rows[0].percent_rank * 100;
   }
 
+  async getDurationMsPercentile(fightName, durationMs) {
+    const res = await this.pool.query(
+      `select percent_rank($1) within group (order by duration_ms desc)
+      from logs_meta
+      where logs_meta.fight_name = $2 and logs_meta.success = true`,
+      [durationMs, fightName]);
+    return res.rows[0].percent_rank * 100;
+  }
 }
