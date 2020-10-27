@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import yargs from 'yargs';
 
 
 import PGDatabase from './db/postgres.js';
@@ -10,7 +11,8 @@ const app = express();
 // const logsDir = '../arcdps.cbtlogs';
 const db = new PGDatabase();
 
-const create = false;
+const argv = yargs(process.argv.slice(2)).argv;
+const create = argv.create;
 
 async function startServer() {
   if (create) {
