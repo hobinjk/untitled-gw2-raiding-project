@@ -16,6 +16,12 @@ type ILogsViewState = {
   logsLinkLast: string|null,
 };
 
+function makeQueryWithStart(query: URLSearchParams, start: number) {
+  let qws = new URLSearchParams(query);
+  qws.set('start', start.toString());
+  return qws.toString();
+}
+
 function LogsView() {
   const location = useLocation();
 
@@ -42,22 +48,20 @@ function LogsView() {
       const res = await fetch(`/api/v0/logs?${query.toString()}`);
       const data = await res.json();
 
-      let logsLinkFirst = '/logs?start=0';
+      let logsLinkFirst = `/logs?${makeQueryWithStart(query, 0)}`;
       let logsLinkPrev: string|null = null;
       let logsLinkNext: string|null = null;
       let lastStart = Math.floor(data.count / data.page.limit) * data.page.limit;
-      let logsLinkLast = `/logs?start=${lastStart.toString()}`;
+      let logsLinkLast = `/logs?${makeQueryWithStart(query, lastStart)}`;
 
       if (data.logs.length >= data.page.limit) {
-        const nextQuery = new URLSearchParams(query);
-        nextQuery.set('start', `${data.page.start + data.page.limit}`);
-        logsLinkNext = `/logs?${nextQuery.toString()}`;
+        const nextStart = data.page.start + data.page.limit;
+        logsLinkNext = `/logs?${makeQueryWithStart(query, nextStart)}`;
       }
 
       if (data.page.start > 0) {
-        const prevQuery = new URLSearchParams(query);
-        prevQuery.set('start', `${Math.max(0, data.page.start - data.page.limit)}`);
-        logsLinkPrev = `/logs?${prevQuery.toString()}`;
+        const prevStart = Math.max(0, data.page.start - data.page.limit);
+        logsLinkPrev = `/logs?${makeQueryWithStart(query, prevStart)}`;
       }
 
       setAppState({
