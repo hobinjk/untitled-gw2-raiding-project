@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './DPSBar.css';
 import rarityForPercentile from '../rarityForPercentile';
+import API from '../API';
 
 type IDPSBarState = {
   targetPercentile: number|null,
@@ -23,7 +24,7 @@ export default function DPSBar(props: any) {
       query.set('role', player.role);
       query.set('targetDps', stats.target_dps);
       query.set('allDps', stats.all_dps);
-      const res = await fetch(`/api/v0/stats/percentiles/dps?${query.toString()}`);
+      const res = await API.fetch(`/api/v0/stats/percentiles/dps?${query.toString()}`);
       const {targetPercentile, allPercentile} = await res.json();
 
       setAppState({

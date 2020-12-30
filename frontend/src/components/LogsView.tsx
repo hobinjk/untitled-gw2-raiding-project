@@ -6,6 +6,7 @@ import {
 
 import './LogsView.css';
 import LogsList from './LogsList';
+import API from '../API';
 
 type ILogsViewState = {
   loading: boolean,
@@ -45,7 +46,7 @@ function LogsView() {
     });
     const load = async () => {
       const query = new URLSearchParams(location.search);
-      const res = await fetch(`/api/v0/logs?${query.toString()}`);
+      const res = await API.fetch(`/api/v0/logs?${query.toString()}`);
       const data = await res.json();
 
       let logsLinkFirst = `/logs?${makeQueryWithStart(query, 0)}`;

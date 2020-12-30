@@ -6,6 +6,7 @@ import {
 
 import PlayersList from './PlayersList';
 import LogHeader from './LogHeader';
+import API from '../API';
 
 function LogView() {
   const params: any = useParams();
@@ -25,9 +26,9 @@ function LogView() {
     });
 
     const load = async () => {
-      const res = await fetch(`/api/v0/logs/${logId}`);
+      const res = await API.fetch(`/api/v0/logs/${logId}`);
       const log = await res.json();
-      const resStats = await fetch(`/api/v0/logs/stats/${logId}`);
+      const resStats = await API.fetch(`/api/v0/logs/stats/${logId}`);
       const dataStats = await resStats.json();
 
       const players: {[name: string]: boolean} = {};

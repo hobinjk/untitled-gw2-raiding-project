@@ -5,6 +5,7 @@ import {
 } from 'react-router-dom';
 
 import LogsList from './LogsList';
+import API from '../API';
 
 type ILeaderboardViewState = {
   loading: {[fightName: string]: boolean}
@@ -17,7 +18,7 @@ async function loadFightLeaderboardLogs(fightName: string) {
   query.set('order', 'duration');
   query.set('success', 'true');
   query.set('limit', '10');
-  const res = await fetch(`/api/v0/logs?${query.toString()}`);
+  const res = await API.fetch(`/api/v0/logs?${query.toString()}`);
   const data = await res.json();
   return data.logs;
 }

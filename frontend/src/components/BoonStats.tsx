@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {quickness, alacrity, might} from '../squadBuffGeneration';
 import makePercentile from '../makePercentile';
+import API from '../API';
 
 type IBoonState = {
   name: string,
@@ -44,7 +45,7 @@ export default function BoonStats(props: any) {
     query.set('output', output.toString());
     query.set('buff', name.toLowerCase());
 
-    const res = await fetch(`/api/v0/stats/percentiles/buffOutput?${query.toString()}`);
+    const res = await API.fetch(`/api/v0/stats/percentiles/buffOutput?${query.toString()}`);
     const percentile: number = (await res.json()).outputPercentile;
     return percentile;
   };

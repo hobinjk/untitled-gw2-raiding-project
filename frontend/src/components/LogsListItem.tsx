@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PlayersComposition from './PlayersComposition';
 import makePercentile from '../makePercentile';
+import API from '../API';
 
 type ILogsListItemState = {
   percentile: number|null,
@@ -57,7 +58,7 @@ export default function LogsListItem(props: any) {
       query.set('fightName', fightName);
       query.set('durationMs', durationMs);
 
-      const res = await fetch(`/api/v0/stats/percentiles/durationMs?${query.toString()}`);
+      const res = await API.fetch(`/api/v0/stats/percentiles/durationMs?${query.toString()}`);
       const percentile: number = (await res.json()).durationMsPercentile;
       setAppState({
         percentile,

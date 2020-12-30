@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import makePercentile from '../makePercentile';
+import API from '../API';
 
 const boringMechanics = {
   'Got up': true,
@@ -93,7 +94,7 @@ export default function MechanicStats(props: any) {
     query.set('mechanicName', name);
     query.set('occurrences', value.toString());
 
-    const res = await fetch(`/api/v0/stats/percentiles/mechanic?${query.toString()}`);
+    const res = await API.fetch(`/api/v0/stats/percentiles/mechanic?${query.toString()}`);
     const percentile: number = (await res.json()).occurrencesPercentile;
     return percentile;
   };

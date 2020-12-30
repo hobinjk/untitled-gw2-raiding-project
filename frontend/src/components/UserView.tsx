@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import UserKeyItem from './UserKeyItem';
 import UserKeyAdd from './UserKeyAdd';
 import UserRegister from './UserRegister';
+import API from '../API';
 
 type IUser = {
   username: string,
@@ -21,7 +22,7 @@ export default function UserView() {
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch('/api/v0/user');
+      const res = await API.fetch('/api/v0/user');
       const user = await res.json();
 
       setAppState({
