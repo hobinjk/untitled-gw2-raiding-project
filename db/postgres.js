@@ -5,6 +5,8 @@ import {
   buffIds,
 } from '../guessRole.js';
 
+import Passwords from './Passwords.js';
+
 import pg from 'pg';
 const {Pool} = pg;
 
@@ -26,9 +28,22 @@ export default class PGDatabase {
     await this.pool.query(`drop table if exists players`);
     await this.pool.query(`drop table if exists logs_meta`);
     await this.pool.query(`drop table if exists logs`);
+    await this.pool.query(`drop table if exists uploaders_api_keys`);
+    await this.pool.query(`drop table if exists uploaders`);
 
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS uploaders (
+      id BIGSERIAL PRIMARY KEY,
+      name text not null unique,
+      email text not null unique,
+      password_hash text
+    )`);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS uploaders_api_keys (
+      uploader_id BIGSERIAL REFERENCES uploaders(id),
+      key text not null
+    )`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS logs (
       id BIGSERIAL PRIMARY KEY,
+      uploader_id BIGSERIAL REFERENCES uploaders(id),
       data jsonb not null
     )`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS logs_meta (
@@ -75,10 +90,13 @@ export default class PGDatabase {
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_duration_ms_idx ON logs_meta (duration_ms)`);
   }
 
-  async insertLog(log) {
+  async insertLog(log, uploaderId) {
+    if (log.logErrors) {
+      delete log.logErrors;
+    }
     let res = await this.pool.query(
-      'INSERT INTO logs (data) VALUES ($1) RETURNING (id)',
-      [log]);
+      'INSERT INTO logs (data, uploader_id) VALUES ($1, $2) RETURNING (id)',
+      [log, uploaderId]);
     let logId = res.rows[0].id;
 
     await this.pool.query(
@@ -161,6 +179,8 @@ export default class PGDatabase {
         }
       }
     }
+
+    return logId;
   }
 
   /**
@@ -294,5 +314,45 @@ export default class PGDatabase {
       where logs_meta.fight_name = $2 and logs_meta.success = true`,
       [durationMs, fightName]);
     return res.rows[0].percent_rank * 100;
+  }
+
+  async insertUploader(name, email, password) {
+    let passwordHash = null;
+    if (password) {
+      passwordHash = Passwords.hash(password);
+    }
+    const res = await this.pool.query(
+      `INSERT INTO uploaders (name, email, password_hash)
+      VALUES ($1, $2, $3) RETURNING (id)`,
+      [name, email.toLowerCase(), passwordHash]);
+    return res.rows[0].id;
+  }
+
+  async getUploader(name) {
+    const res = await this.pool.query(
+      `select (id) from uploaders where name = $1`,
+      [name]);
+    if (!res.rows || !res.rows[0]) {
+      return;
+    }
+    return res.rows[0].id;
+  }
+
+  async attemptLogin(name, password) {
+    const res = await this.pool.query(
+      `select (password_hash) from uploaders where name = $1`,
+      [name]);
+    if (!res.rows || !res.rows[0]) {
+      return false;
+    }
+    const realHash = res.rows[0].password_hash;
+    if (!realHash) {
+      return false;
+    }
+    const testHash = Passwords.hash(password);
+    if (testHash === realHash) {
+      return true; // TODO provide token at this point
+    }
+    return false;
   }
 }

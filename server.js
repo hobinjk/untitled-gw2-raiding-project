@@ -1,4 +1,5 @@
 import express from 'express';
+import bodyParser from 'body-parser';
 import path from 'path';
 import yargs from 'yargs';
 
@@ -22,6 +23,9 @@ async function startServer() {
   if (create) {
     await statsModel.readLogs('../arcdps.cbtlogs');
   }
+
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({extended: true}));
 
   app.use('/api/v0', APIRouter.create(statsModel));
   app.use(express.static(path.join('frontend', 'build')));
