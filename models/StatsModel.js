@@ -30,6 +30,9 @@ export default class StatsModel {
       if (dirent.name.startsWith('.')) {
         continue;
       }
+      if (dirent.name === 'WvW') {
+        continue;
+      }
       let logPath = path.join(dirPath, dirent.name);
       if (dirent.isDirectory()) {
         console.log(logPath);
