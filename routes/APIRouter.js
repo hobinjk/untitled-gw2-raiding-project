@@ -1,5 +1,6 @@
 import Router from 'express-promise-router';
 import {buffIds} from '../guessRole.js';
+import fetch from 'node-fetch';
 
 export function create(statsModel) {
   const APIRouter = new Router();
@@ -115,6 +116,38 @@ export function create(statsModel) {
       durationMsPercentile: await statsModel.db.getDurationMsPercentile(
         fightName, durationMs),
     });
+  });
+
+  APIRouter.post('/logs', async (req, res) => {
+    console.log(req);
+    const parts =
+      /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(req.body.url);
+    if (!parts) {
+      console.warn('log url bad');
+      res.sendStatus(500);
+      return;
+    }
+    const slug = parts[1];
+    const logFetch = await fetch(`https://dps.report/getJson?permalink=${slug}`);
+    const log = await logFetch.json();
+    if (!log) {
+      console.warn('log fetch failed');
+      res.sendStatus(500);
+      return;
+    }
+
+    let uploaderId = null;
+    if (req.body.uploaderToken) {
+      uploaderId =
+        await statsModel.db.verifyUploaderToken(req.body.uploaderToken);
+    } else {
+      await statsModel.getDefaultUploader();
+      uploaderId = statsModel.uploader;
+    }
+
+    const id = await statsModel.addLog(log, uploaderId);
+
+    res.redirect(307, `/logs/${id}`);
   });
 
   return APIRouter;

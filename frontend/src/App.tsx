@@ -10,6 +10,8 @@ import Home from './components/Home';
 import LogsView from './components/LogsView';
 import LogView from './components/LogView';
 import LeaderboardView from './components/LeaderboardView';
+import UploadView from './components/UploadView';
+import UserView from './components/UserView';
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
           <div className="navbar-start">
             <Link className="navbar-item" to="/logs">Logs</Link>
             <Link className="navbar-item" to="/leaderboard">Leaderboard</Link>
+            <Link className="navbar-item" to="/upload">Upload</Link>
+            <Link className="navbar-item" to="/user">Profile</Link>
           </div>
         </div>
       </nav>
@@ -45,6 +49,12 @@ function App() {
           </Route>
           <Route path="/leaderboard">
             <LeaderboardView />
+          </Route>
+          <Route path="/upload">
+            <UploadView />
+          </Route>
+          <Route path="/user">
+            <UserView />
           </Route>
         </Switch>
       </main>

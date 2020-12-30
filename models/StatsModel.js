@@ -9,7 +9,22 @@ export default class StatsModel {
     this.funStats = [];
   }
 
+  async getDefaultUploader() {
+    if (this.uploader) {
+      return;
+    }
+    this.uploader = await this.db.getUploader('anonymous');
+    if (typeof this.uploader === 'number') {
+      return;
+    }
+    this.uploader = await this.db.insertUploader('anonymous',
+                                                 'anonymous@localhost',
+                                                 null);
+  }
+
   async readLogs(dirPath) {
+    await this.getDefaultUploader();
+
     let dirents = fs.readdirSync(dirPath, {withFileTypes: true});
     for (let dirent of dirents) {
       if (dirent.name.startsWith('.')) {
@@ -29,7 +44,7 @@ export default class StatsModel {
     }
   }
 
-  async addLog(log) {
+  async addLog(log, uploaderId) {
     for (let player of log.players) {
       player.role = guessRole(log, player);
       if (log.success) {
@@ -74,7 +89,7 @@ export default class StatsModel {
     if (log.success && this.dpsStats.length % 10 === 0) {
       console.log(this.dpsStats.length);
     }
-    await this.db.insertLog(log);
+    return await this.db.insertLog(log, uploaderId || this.uploader);
   }
 }
 
