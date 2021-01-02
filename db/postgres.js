@@ -392,7 +392,19 @@ class PGDatabase {
     return res.rows[0].id;
   }
 
-  async getUser(name) {
+  async getUser(userId) {
+    const res = await this.pool.query(
+      `select name, email from users where id = $1`,
+      [userId]);
+    if (!res.rows || !res.rows[0]) {
+      return;
+    }
+    let user = res.rows[0];
+    user.keys = [];
+    return user;
+  }
+
+  async getUserIdByName(name) {
     const res = await this.pool.query(
       `select (id) from users where name = $1`,
       [name]);

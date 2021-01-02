@@ -12,13 +12,14 @@ import LogView from './components/LogView';
 import LeaderboardView from './components/LeaderboardView';
 import UploadView from './components/UploadView';
 import UserView from './components/UserView';
+import API from './API';
 
 function App() {
   return (
     <Router>
       <nav className="navbar" role="navigation" aria-label="main navigation">
         <div className="navbar-brand">
-          <Link className="navbar-item" to="/">Home</Link>
+          <Link className="navbar-item" to="/logs">Public Logs</Link>
 
           <a role="button" className="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
             <span aria-hidden="true"></span>
@@ -28,11 +29,17 @@ function App() {
         </div>
         <div className="navbar-menu">
           <div className="navbar-start">
-            <Link className="navbar-item" to="/logs">Public Logs</Link>
-            <Link className="navbar-item" to="/logs?personal=true">Personal Logs</Link>
+            {API.isLoggedIn() &&
+              <Link className="navbar-item" to="/logs?personal=true">Personal Logs</Link>
+            }
             <Link className="navbar-item" to="/leaderboard">Leaderboard</Link>
-            <Link className="navbar-item" to="/upload">Upload</Link>
-            <Link className="navbar-item" to="/user">Profile</Link>
+            {API.isLoggedIn() && (<>
+              <Link className="navbar-item" to="/upload">Upload</Link>
+              <Link className="navbar-item" to="/user">Profile</Link>
+            </>)}
+            {!API.isLoggedIn() &&
+              <Link className="navbar-item" to="/user">Log In/Create Account</Link>
+            }
           </div>
         </div>
       </nav>

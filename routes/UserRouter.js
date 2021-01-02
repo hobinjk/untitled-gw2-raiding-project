@@ -1,22 +1,19 @@
 import Router from 'express-promise-router';
 import db from '../db/postgres.js';
 import JSONWebToken from '../models/JSONWebToken.js';
+import {middleware} from '../util/JWTMiddleware.js';
 
 export function create() {
   const UserRouter = new Router();
 
   // UserRouter.use('/', JWTMiddleware.middleware);
 
-  UserRouter.get('/', (req, res) => {
-    if (!req.jwt) {
-      res.json(null);
-      return;
-    }
-    console.log(req.jwt);
-    res.json(db.getUser(req.jwt.user.name));
+  UserRouter.get('/', middleware(), async (req, res) => {
+    console.log('user', req.jwt);
+    res.json(await db.getUser(req.jwt.user));
   });
 
-  UserRouter.get('/keys', (req, res) => {
+  UserRouter.get('/keys', middleware(), (req, res) => {
     res.json([]);
   });
 

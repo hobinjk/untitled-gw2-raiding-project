@@ -1,6 +1,9 @@
 let userJwt = window.localStorage.getItem('userJwt');
 
 export default {
+  isLoggedIn: function() {
+    return !!userJwt;
+  },
   fetch: async function(resource: string, init: any = {}) {
     if (!init.headers) {
       init.headers = {};

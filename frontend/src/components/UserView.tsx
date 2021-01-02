@@ -6,7 +6,8 @@ import UserLogin from './UserLogin';
 import API from '../API';
 
 type IUser = {
-  username: string,
+  name: string,
+  email: string,
   keys: [any],
 }
 
@@ -60,13 +61,16 @@ export default function UserView() {
   return (
     <section className="section">
       <div className="container">
-        <h2>{appState.user.username}</h2>
+        <p>Name: {appState.user.name}</p>
+        <p>Email: {appState.user.email}</p>
         {appState.user.keys.map((key) => {
           return (
             <UserKeyItem key={key} />
           );
         })}
-        <UserKeyAdd user={appState.user} />
+        {false &&
+          <UserKeyAdd user={appState.user} />
+        }
       </div>
     </section>
   );

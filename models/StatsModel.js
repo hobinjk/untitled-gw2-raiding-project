@@ -14,7 +14,7 @@ export default class StatsModel {
     if (this.uploader) {
       return;
     }
-    this.uploader = await this.db.getUser('anonymous');
+    this.uploader = await this.db.getUserIdByName('anonymous');
     if (typeof this.uploader === 'number') {
       return;
     }
