@@ -1,11 +1,15 @@
 import Router from 'express-promise-router';
-import {buffIds} from '../guessRole.js';
 import fetch from 'node-fetch';
+import {buffIds} from '../guessRole.js';
+import {
+  middleware,
+  middlewareInsecure,
+} from '../util/JWTMiddleware.js';
+import Constants from '../Constants.js';
 
 export function create(statsModel) {
   const APIRouter = new Router();
-  APIRouter.get('stats', (req, res) => {
-    console.log(req.query);
+  APIRouter.get('/stats', (req, res) => {
     let query = {
       fightName: req.query.fightName,
       role: req.query.role,
@@ -24,29 +28,43 @@ export function create(statsModel) {
     }));
   });
 
-  APIRouter.get('funStats', (req, res) => {
+  APIRouter.get('/funStats', (req, res) => {
     res.json(statsModel.funStats);
   });
 
-  APIRouter.get('/logs', async (req, res) => {
-    console.log(req.query);
+  APIRouter.get('/logs', middlewareInsecure(), async (req, res) => {
+    console.log('/logs', req.jwt);
     let query = {
       fightName: req.query.fightName,
       role: req.query.role,
       account: req.query.account,
       order: req.query.order,
       success: req.query.success,
+      personal: req.query.personal,
     };
     let page = {
       start: parseInt(req.query.start) || 0,
       limit: parseInt(req.query.limit) || 40,
     };
 
-    res.json(await statsModel.db.filterLogsMetadata(query, page));
+    res.json(await statsModel.db.filterLogsMetadata(query, page, req.jwt));
   });
 
-  APIRouter.get('/logs/:logId', async (req, res) => {
-    const log = await statsModel.db.getLog(req.params.logId);
+  APIRouter.get('/logs/:logId', middlewareInsecure(), async (req, res) => {
+    const {logId} = req.params;
+    const meta = await statsModel.db.getLogMeta(logId);
+    if (!meta) {
+      res.sendStatus(404);
+      return;
+    }
+
+    if (meta.visibility === Constants.LOG_VISIBILITY_PRIVATE &&
+        (!req.jwt || meta.user_id !== req.jwt.user)) {
+      res.sendStatus(404);
+      return;
+    }
+
+    const log = await statsModel.db.getLog(logId);
     if (!log) {
       res.sendStatus(404);
       return;
@@ -54,14 +72,18 @@ export function create(statsModel) {
     res.json(log);
   });
 
-  APIRouter.get('/logs/stats/:logId', async (req, res) => {
-    const stats = await statsModel.db.getLogStats(req.params.logId);
-    if (!stats) {
-      res.sendStatus(404);
-      return;
+  APIRouter.get(
+    '/logs/stats/:logId',
+    middlewareInsecure(),
+    async (req, res) => {
+      const stats = await statsModel.db.getLogStats(req.params.logId, req.jwt);
+      if (!stats) {
+        res.sendStatus(404);
+        return;
+      }
+      res.json(stats);
     }
-    res.json(stats);
-  });
+  );
 
   APIRouter.get('/stats/percentiles/dps', async (req, res) => {
     console.log(req.query);
@@ -118,8 +140,7 @@ export function create(statsModel) {
     });
   });
 
-  APIRouter.post('/logs', async (req, res) => {
-    console.log(req);
+  APIRouter.post('/logs', middleware(), async (req, res) => {
     const parts =
       /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(req.body.url);
     if (!parts) {
@@ -136,18 +157,40 @@ export function create(statsModel) {
       return;
     }
 
-    let uploaderId = null;
-    if (req.body.uploaderToken) {
-      uploaderId =
-        await statsModel.db.verifyUploaderToken(req.body.uploaderToken);
-    } else {
-      await statsModel.getDefaultUploader();
-      uploaderId = statsModel.uploader;
+    const uploaderId = req.jwt.user;
+
+    let visibility = req.body.visibility;
+    if (![
+      Constants.LOG_VISIBILITY_PUBLIC,
+      Constants.LOG_VISIBILITY_UNLISTED,
+      Constants.LOG_VISIBILITY_PRIVATE,
+    ].includes(visibility)) {
+      visibility = Constants.LOG_VISIBILITY_PUBLIC;
     }
 
-    const id = await statsModel.addLog(log, uploaderId);
+    const id = await statsModel.addLog(log, uploaderId,
+                                       visibility);
 
     res.redirect(307, `/logs/${id}`);
+  });
+
+  APIRouter.delete('/logs/:logId', middleware(), async (req, res) => {
+    const {logId} = req.params;
+    const meta = await statsModel.db.getLogMeta(logId);
+    if (!meta) {
+      res.sendStatus(404);
+      return;
+    }
+    if (meta.user_id !== req.jwt.user) {
+      res.sendStatus(401);
+      return;
+    }
+    const success = await statsModel.db.deleteLog(logId);
+    if (!success) {
+      res.sendStatus(500);
+      return;
+    }
+    res.json({success});
   });
 
   return APIRouter;

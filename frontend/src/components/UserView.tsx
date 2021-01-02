@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import UserKeyItem from './UserKeyItem';
 import UserKeyAdd from './UserKeyAdd';
 import UserRegister from './UserRegister';
+import UserLogin from './UserLogin';
 import API from '../API';
 
 type IUser = {
@@ -46,6 +47,9 @@ export default function UserView() {
   if (!appState.user) {
     return (
       <section className="section">
+        <div className="container">
+          <UserLogin />
+        </div>
         <div className="container">
           <UserRegister />
         </div>

@@ -2,11 +2,17 @@ import React from 'react';
 
 export default function UserRegister() {
   return (
-    <form action="/api/v0/user" method="post">
+    <form action="/api/v0/user/register" method="post">
       <div className="field">
-        <label className="label" htmlFor="username">dps.report url</label>
+        <label className="label" htmlFor="username">Username</label>
         <div className="control">
           <input className="input" type="text" name="username" id="username" required />
+        </div>
+      </div>
+      <div className="field">
+        <label className="label" htmlFor="email">Email</label>
+        <div className="control">
+          <input className="input" type="text" name="email" id="email" required />
         </div>
       </div>
       <div className="field">

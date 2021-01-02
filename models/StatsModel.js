@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import guessRole from '../guessRole.js';
+import Constants from '../Constants.js';
 
 export default class StatsModel {
   constructor(db) {
@@ -13,13 +14,13 @@ export default class StatsModel {
     if (this.uploader) {
       return;
     }
-    this.uploader = await this.db.getUploader('anonymous');
+    this.uploader = await this.db.getUser('anonymous');
     if (typeof this.uploader === 'number') {
       return;
     }
-    this.uploader = await this.db.insertUploader('anonymous',
-                                                 'anonymous@localhost',
-                                                 null);
+    this.uploader = await this.db.insertUser('anonymous',
+                                             'anonymous@localhost',
+                                             'nope');
   }
 
   async readLogs(dirPath) {
@@ -47,7 +48,7 @@ export default class StatsModel {
     }
   }
 
-  async addLog(log, uploaderId) {
+  async addLog(log, userId, visibility) {
     for (let player of log.players) {
       player.role = guessRole(log, player);
       if (log.success) {
@@ -92,7 +93,9 @@ export default class StatsModel {
     if (log.success && this.dpsStats.length % 10 === 0) {
       console.log(this.dpsStats.length);
     }
-    return await this.db.insertLog(log, uploaderId || this.uploader);
+    return await this.db.insertLog(
+      log, userId || this.uploader,
+      visibility || Constants.LOG_VISIBILITY_PUBLIC);
   }
 }
 

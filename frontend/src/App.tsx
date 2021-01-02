@@ -28,7 +28,8 @@ function App() {
         </div>
         <div className="navbar-menu">
           <div className="navbar-start">
-            <Link className="navbar-item" to="/logs">Logs</Link>
+            <Link className="navbar-item" to="/logs">Public Logs</Link>
+            <Link className="navbar-item" to="/logs?personal=true">Personal Logs</Link>
             <Link className="navbar-item" to="/leaderboard">Leaderboard</Link>
             <Link className="navbar-item" to="/upload">Upload</Link>
             <Link className="navbar-item" to="/user">Profile</Link>

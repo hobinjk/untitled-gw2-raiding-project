@@ -6,11 +6,12 @@ import {
 } from '../guessRole.js';
 
 import Passwords from './Passwords.js';
+import Constants from '../Constants.js';
 
 import pg from 'pg';
 const {Pool} = pg;
 
-export default class PGDatabase {
+class PGDatabase {
   constructor() {
     this.pool = new Pool({
       database: 'raidcleanser',
@@ -28,26 +29,39 @@ export default class PGDatabase {
     await this.pool.query(`drop table if exists players`);
     await this.pool.query(`drop table if exists logs_meta`);
     await this.pool.query(`drop table if exists logs`);
-    await this.pool.query(`drop table if exists uploaders_api_keys`);
-    await this.pool.query(`drop table if exists uploaders`);
+    await this.pool.query(`drop table if exists users_api_keys`);
+    await this.pool.query(`drop table if exists jsonwebtokens`);
+    await this.pool.query(`drop table if exists users`);
 
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS uploaders (
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS users (
       id BIGSERIAL PRIMARY KEY,
       name text not null unique,
       email text not null unique,
       password_hash text
     )`);
-    await this.pool.query(`CREATE TABLE IF NOT EXISTS uploaders_api_keys (
-      uploader_id BIGSERIAL REFERENCES uploaders(id),
-      key text not null
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS users_api_keys (
+      user_id BIGSERIAL REFERENCES users(id),
+      key text not null,
+      account VARCHAR(64)
     )`);
+
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS jsonwebtokens (
+      id BIGSERIAL PRIMARY KEY,
+      key_id text unique,
+      user_id BIGSERIAL REFERENCES users(id),
+      issued_at DATE,
+      public_key text,
+      payload text
+    )`);
+
     await this.pool.query(`CREATE TABLE IF NOT EXISTS logs (
       id BIGSERIAL PRIMARY KEY,
-      uploader_id BIGSERIAL REFERENCES uploaders(id),
       data jsonb not null
     )`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS logs_meta (
       log_id BIGSERIAL REFERENCES logs(id),
+      user_id BIGSERIAL REFERENCES users(id),
+      visibility varchar(16) not null,
       success boolean,
       fight_name VARCHAR(64) NOT NULL,
       time_start VARCHAR(64) NOT NULL,
@@ -90,18 +104,20 @@ export default class PGDatabase {
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_duration_ms_idx ON logs_meta (duration_ms)`);
   }
 
-  async insertLog(log, uploaderId) {
+  async insertLog(log, userId, visibility) {
     if (log.logErrors) {
       delete log.logErrors;
     }
     let res = await this.pool.query(
-      'INSERT INTO logs (data, uploader_id) VALUES ($1, $2) RETURNING (id)',
-      [log, uploaderId]);
+      'INSERT INTO logs (data) VALUES ($1) RETURNING (id)',
+      [log]);
     let logId = res.rows[0].id;
 
     await this.pool.query(
       `INSERT INTO logs_meta SELECT
         id as log_id,
+        $1 as user_id,
+        $2 as visibility,
         (data -> 'success')::boolean AS success,
         data ->> 'fightName' AS fight_name,
         data ->> 'timeStartStd' AS time_start,
@@ -109,8 +125,8 @@ export default class PGDatabase {
         (data -> 'phases' -> 0 -> 'end')::int as duration_ms,
         (data -> 'targets' -> 0 ->> 'healthPercentBurned')::real as health_percent_burned,
         (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players
-      FROM logs WHERE id = $1`,
-      [logId]);
+      FROM logs WHERE id = $3`,
+      [userId, visibility, logId]);
 
     for (const player of log.players) {
       let existingPlayer = await this.pool.query(
@@ -187,7 +203,7 @@ export default class PGDatabase {
    * @param {Object} Query
    * @return {Array<Object>} metadata objects of all logs
    */
-  async filterLogsMetadata(query, page = {start: 0, limit: 20}) {
+  async filterLogsMetadata(query, page = {start: 0, limit: 20}, jwt) {
     const logMeta = `* FROM logs_meta`;
 
     const order = query.order === 'duration' ? 'duration_ms' : 'time_start';
@@ -196,6 +212,21 @@ export default class PGDatabase {
     let conditions = [];
     let args = [];
 
+    if (query.personal) {
+      if (!jwt) {
+        return {
+          logs: [],
+          page,
+          count: 0,
+        };
+      }
+      conditions.push(`user_id = $${args.length + 1}`);
+      console.log(jwt);
+      args.push(jwt.user);
+    } else {
+      conditions.push(`visibility = '${Constants.LOG_VISIBILITY_PUBLIC}'`);
+    }
+
     if (query.account) {
       // do some nonsense
       const playerRes = await this.pool.query(
@@ -203,7 +234,11 @@ export default class PGDatabase {
         [query.account]);
       if (!playerRes.rows[0]) {
         console.warn(`Player ${JSON.stringify(query.account)} not found`);
-        return [];
+        return {
+          logs: [],
+          page,
+          count: 0,
+        };
       }
       const playerId = playerRes.rows[0].id;
 
@@ -232,6 +267,10 @@ export default class PGDatabase {
     } else {
       let where = 'WHERE ' + conditions.join(' AND ');
       let count = await this.pool.query(`SELECT count(*) from logs_meta ${where}`, args);
+      console.log(
+        'querying',
+        `SELECT ${logMeta} ${where} ${orderLimitOffset}`,
+        args);
       let logs = await this.pool.query(
         `SELECT ${logMeta} ${where} ${orderLimitOffset}`,
         args);
@@ -241,6 +280,20 @@ export default class PGDatabase {
         count: count.rows[0].count,
       };
     }
+  }
+
+  /**
+   * @param {BigSerial} logId
+   * @return {Object} log metadata
+   */
+  async getLogMeta(logId) {
+    let logs = await this.pool.query(
+      `SELECT * FROM logs_meta WHERE log_id = $1`,
+      [logId]);
+    if (!logs || !logs.rows || !logs.rows.length) {
+      return;
+    }
+    return logs.rows[0];
   }
 
   /**
@@ -255,6 +308,17 @@ export default class PGDatabase {
       return;
     }
     return logs.rows[0].data;
+  }
+
+  /**
+   * @param {BigSerial} id
+   * @return {boolean} whether successful
+   */
+  async deleteLog(id) {
+    let deletedLogs = await this.pool.query(
+      `DELETE FROM logs WHERE id = $1`,
+      [id]);
+    return deletedLogs.rowCount > 0;
   }
 
   /**
@@ -316,21 +380,21 @@ export default class PGDatabase {
     return res.rows[0].percent_rank * 100;
   }
 
-  async insertUploader(name, email, password) {
+  async insertUser(name, email, password) {
     let passwordHash = null;
     if (password) {
-      passwordHash = Passwords.hash(password);
+      passwordHash = await Passwords.hash(password);
     }
     const res = await this.pool.query(
-      `INSERT INTO uploaders (name, email, password_hash)
+      `INSERT INTO users (name, email, password_hash)
       VALUES ($1, $2, $3) RETURNING (id)`,
       [name, email.toLowerCase(), passwordHash]);
     return res.rows[0].id;
   }
 
-  async getUploader(name) {
+  async getUser(name) {
     const res = await this.pool.query(
-      `select (id) from uploaders where name = $1`,
+      `select (id) from users where name = $1`,
       [name]);
     if (!res.rows || !res.rows[0]) {
       return;
@@ -340,7 +404,7 @@ export default class PGDatabase {
 
   async attemptLogin(name, password) {
     const res = await this.pool.query(
-      `select (password_hash) from uploaders where name = $1`,
+      `select (password_hash) from users where name = $1`,
       [name]);
     if (!res.rows || !res.rows[0]) {
       return false;
@@ -349,10 +413,53 @@ export default class PGDatabase {
     if (!realHash) {
       return false;
     }
-    const testHash = Passwords.hash(password);
-    if (testHash === realHash) {
-      return true; // TODO provide token at this point
+    const equal = await Passwords.compare(password, realHash);
+    if (equal) {
+      return await this.getUser(name);
     }
     return false;
   }
+
+  /**
+   * Get a JWT by its key id.
+   * @param {string} keyId
+   * @return {Promise<Object>} jwt data
+   */
+  async getJSONWebTokenByKeyId(keyId) {
+    const res = await this.pool.query(
+      `select * from jsonwebtokens where key_id = $1`,
+      [keyId]);
+    if (!res.rows || !res.rows[0]) {
+      return;
+    }
+    return res.rows[0];
+  }
+
+  /**
+   * Insert a JSONWebToken into the database
+   * @param {JSONWebToken} token
+   * @return {Promise<number>} resolved to JWT's primary key
+   */
+  async createJSONWebToken(token) {
+    const {keyId, user, publicKey, issuedAt, payload} = token;
+    const result = await this.pool.query(
+      `INSERT INTO jsonwebtokens (key_id, user_id, issued_at, public_key, payload)
+      VALUES ($1, $2, $3, $4, $5) RETURNING (id)`,
+      [keyId, user, issuedAt, publicKey, JSON.stringify(payload)]);
+    return result.rows[0].id;
+  }
+
+  /**
+   * Delete a JWT by its key id.
+   * @param {string} keyId
+   * @return {Promise<boolean>} whether deleted
+   */
+  async deleteJSONWebTokenByKeyId(keyId) {
+    const res = await this.pool.query(
+      `delete from jsonwebtokens where key_id = $1`,
+      [keyId]);
+    return res.rowCount > 0;
+  }
 }
+
+export default new PGDatabase();
