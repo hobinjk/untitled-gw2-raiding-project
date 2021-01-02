@@ -5,6 +5,7 @@ import {
 } from 'react-router-dom';
 
 import LogsList from './LogsList';
+import './LeaderboardView.css';
 import API from '../API';
 
 type ILeaderboardViewState = {
