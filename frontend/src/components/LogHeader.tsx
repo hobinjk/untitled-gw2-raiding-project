@@ -16,10 +16,13 @@ export default function LogHeader(props: any) {
 
   return (
     <div>
-      <div>
-        <h1 className="title">{log.fightName}</h1>
+      <h1 className="title">{log.fightName}</h1>
+      <p>
+        Uploaded by {log.uploaderName}
+      </p>
+      <p>
         {log.success ? 'Success' : 'Failure'}
-      </div>
+      </p>
       <p>
         {log.timeStart} &ndash; {log.duration}
       </p>

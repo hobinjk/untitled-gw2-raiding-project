@@ -69,6 +69,13 @@ export function create(statsModel) {
       res.sendStatus(404);
       return;
     }
+    const uploader = await statsModel.db.getUser(meta.user_id);
+    if (!uploader) {
+      log.uploaderName = 'unknown';
+    } else {
+      log.uploaderName = uploader.name;
+    }
+
     res.json(log);
   });
 
