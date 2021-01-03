@@ -293,7 +293,9 @@ class PGDatabase {
     if (!logs || !logs.rows || !logs.rows.length) {
       return;
     }
-    return logs.rows[0];
+    const meta = logs.rows[0];
+    meta.user_id = parseInt(meta.user_id);
+    return meta;
   }
 
   /**
@@ -315,6 +317,21 @@ class PGDatabase {
    * @return {boolean} whether successful
    */
   async deleteLog(id) {
+    await this.pool.query(
+      `DELETE FROM players_to_logs WHERE log_id = $1`,
+      [id]);
+    await this.pool.query(
+      `DELETE FROM dps_stats WHERE log_id = $1`,
+      [id]);
+    await this.pool.query(
+      `DELETE FROM boon_output_stats WHERE log_id = $1`,
+      [id]);
+    await this.pool.query(
+      `DELETE FROM mechanics_stats WHERE log_id = $1`,
+      [id]);
+    await this.pool.query(
+      `DELETE FROM logs_meta WHERE log_id = $1`,
+      [id]);
     let deletedLogs = await this.pool.query(
       `DELETE FROM logs WHERE id = $1`,
       [id]);

@@ -69,6 +69,13 @@ export function create(statsModel) {
       res.sendStatus(404);
       return;
     }
+
+    log.id = logId;
+
+    if (req.jwt && meta.user_id === req.jwt.user) {
+      log.deletable = true;
+    }
+
     const uploader = await statsModel.db.getUser(meta.user_id);
     if (!uploader) {
       log.uploaderName = 'unknown';
