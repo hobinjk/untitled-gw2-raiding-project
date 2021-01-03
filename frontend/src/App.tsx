@@ -15,19 +15,28 @@ import UserView from './components/UserView';
 import API from './API';
 
 function App() {
+  function toggleBurgerMenu() {
+    let navbarMenu = document.querySelector('.navbar-menu');
+    if (navbarMenu) {
+      navbarMenu.classList.toggle('is-active');
+    }
+  }
+
   return (
     <Router>
       <nav className="navbar" role="navigation" aria-label="main navigation">
         <div className="navbar-brand">
           <Link className="navbar-item" to="/logs">Public Logs</Link>
 
-          <a role="button" className="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample">
+          <a role="button" className="navbar-burger" aria-label="menu"
+             aria-expanded="false" data-target="navbarLogs"
+             onClick={toggleBurgerMenu}>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
           </a>
         </div>
-        <div className="navbar-menu">
+        <div id="navbarLogs" className="navbar-menu">
           <div className="navbar-start">
             {API.isLoggedIn() &&
               <Link className="navbar-item" to="/logs?personal=true">Personal Logs</Link>
