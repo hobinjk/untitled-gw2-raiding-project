@@ -36,7 +36,7 @@ function LogView() {
         players[player.name] = true;
       }
 
-      log.mechanics = log.mechanics.filter((mechanic: any) => {
+      log.mechanics = (log.mechanics || []).filter((mechanic: any) => {
         for (let occurrence of mechanic.mechanicsData) {
           if (players.hasOwnProperty(occurrence.actor)) {
             return true;
