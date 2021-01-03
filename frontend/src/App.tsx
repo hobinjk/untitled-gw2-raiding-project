@@ -26,7 +26,7 @@ function App() {
     <Router>
       <nav className="navbar" role="navigation" aria-label="main navigation">
         <div className="navbar-brand">
-          <Link className="navbar-item" to="/logs">Public Logs</Link>
+          <Link className="navbar-item" to="/">Home</Link>
 
           <a role="button" className="navbar-burger" aria-label="menu"
              aria-expanded="false" data-target="navbarLogs"
@@ -38,6 +38,7 @@ function App() {
         </div>
         <div id="navbarLogs" className="navbar-menu">
           <div className="navbar-start">
+            <Link className="navbar-item" to="/logs">Public Logs</Link>
             {API.isLoggedIn() &&
               <Link className="navbar-item" to="/logs?personal=true">Personal Logs</Link>
             }
