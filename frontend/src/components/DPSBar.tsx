@@ -10,7 +10,6 @@ type IDPSBarState = {
 
 export default function DPSBar(props: any) {
   const { player, log, stats } = props;
-  console.log(player, log);
 
   const [appState, setAppState] = useState<IDPSBarState>({
     targetPercentile: null,

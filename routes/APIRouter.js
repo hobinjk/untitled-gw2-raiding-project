@@ -100,7 +100,6 @@ export function create(statsModel) {
   );
 
   APIRouter.get('/stats/percentiles/dps', async (req, res) => {
-    console.log(req.query);
     const fightName = req.query.fightName;
     const role = req.query.role;
     const targetDps = req.query.targetDps;
@@ -115,7 +114,6 @@ export function create(statsModel) {
   });
 
   APIRouter.get('/stats/percentiles/buffOutput', async (req, res) => {
-    console.log(req.query);
     const fightName = req.query.fightName;
     const role = req.query.role;
     const buffName = req.query.buff;
@@ -133,7 +131,6 @@ export function create(statsModel) {
   });
 
   APIRouter.get('/stats/percentiles/mechanic', async (req, res) => {
-    console.log(req.query);
     const fightName = req.query.fightName;
     const mechanicName = req.query.mechanicName;
     const occurrences = req.query.occurrences;
