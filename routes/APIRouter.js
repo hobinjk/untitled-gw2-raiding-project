@@ -151,52 +151,6 @@ export function create(statsModel) {
     });
   });
 
-  APIRouter.post('/stats/percentiles-query', async (req, res) => {
-    const fightName = req.body.fightName;
-    let out = {};
-    if (req.body.dps) {
-      out.dps = [];
-      for (let query of req.body.dps) {
-        const {role, targetDps, allDps} = query;
-        out.dps.push({
-          targetPercentile: await statsModel.db.getTargetDpsPercentile(
-            fightName, role, targetDps),
-          allPercentile: await statsModel.db.getAllDpsPercentile(
-            fightName, role, allDps),
-        });
-      }
-    }
-    if (req.body.buffOutput) {
-      out.buffOutput = [];
-      for (let query of req.body.buffOutput) {
-        const {role, output, buff} = query;
-        const buffId = buffIds[buff];
-        out.buffOutput.push(
-          await statsModel.db.getBuffOutputPercentile(fightName, role, buffId,
-                                                      output));
-      }
-    }
-    if (req.body.mechanic) {
-      out.mechanic = [];
-      for (let query of req.body.mechanic) {
-        const {name, occurrences} = query;
-        out.mechanic.push(
-          await statsModel.db.getMechanicPercentile(fightName, name,
-                                                    occurrences));
-      }
-    }
-    if (req.body.durationMs) {
-      out.durationMs = [];
-      for (let query of req.body.durationMs) {
-        const {fightName, durationMs} = query;
-        out.durationMs.push(
-          await statsModel.db.getDurationMsPercentile(fightName, durationMs));
-      }
-    }
-
-    res.json(out);
-  });
-
   APIRouter.post('/logs', middleware(), async (req, res) => {
     const parts =
       /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(req.body.url);
