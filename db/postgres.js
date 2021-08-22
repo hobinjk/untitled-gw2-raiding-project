@@ -3,7 +3,12 @@ import {
   alacrityGeneration,
   mightGeneration,
   buffIds,
+  boringMechanics,
 } from '../guessRole.js';
+
+import {
+  compressLog,
+} from '../util/compressLog.js';
 
 import Passwords from './Passwords.js';
 import Constants from '../Constants.js';
@@ -340,9 +345,10 @@ class PGDatabase {
 
   /**
    * @param {BigSerial} id
-   * @return {Object} raw json data of log
+   * @param {JSONWebToken} _jwt
+   * @return {Object} raw json dps stat rows
    */
-  async getLogStats(id) {
+  async getLogStats(id, _jwt) {
     let dpsStats = await this.pool.query(
       `SELECT * FROM dps_stats LEFT JOIN players ON players.id = dps_stats.player_id WHERE log_id = $1`,
       [id]);
@@ -350,6 +356,152 @@ class PGDatabase {
       return;
     }
     return dpsStats.rows;
+  }
+
+  /**
+   * @param {BigSerial} id
+   * @param {JSONWebToken} _jwt
+   * @return {Object} Every percentile from the log
+   */
+  async getLogPercentiles(id, _jwt) {
+    let timings = {};
+    timings.getLogPercentiles = performance.now();
+    timings.getLog = performance.now();
+    let log = await this.getLog(id);
+    compressLog(log);
+    for (let key of Object.keys(log.players[0])) {
+      console.log(`players[0].${key}`, JSON.stringify(log.players[0][key]).length);
+    }
+    timings.getLog = performance.now() - timings.getLog;
+    if (!log) {
+      return;
+    }
+    const fightName = log.fightName;
+    timings.getLogStats = performance.now();
+    let dpsStats = await this.getLogStats(id);
+    timings.getLogStats = performance.now() - timings.getLogStats;
+    const dpsStatsByAccount = {};
+    for (let stat of dpsStats) {
+      dpsStatsByAccount[stat.account] = stat;
+    }
+    let out = {
+      fightName,
+      players: [],
+    };
+    let mechanicsCache = {};
+
+    timings.getDpsPercentiles = [];
+    timings.getBuffOutputPercentile = [];
+    timings.getMechanicPercentile = [];
+    for (let player of log.players) {
+      let outPlayer = {
+        name: player.name,
+        account: player.account,
+      };
+
+      let start = performance.now();
+      let targetDps = dpsStatsByAccount[player.account].target_dps;
+      let allDps = dpsStatsByAccount[player.account].all_dps;
+      let [targetDpsPercentile, allDpsPercentile] =
+        await Promise.all([
+          this.getTargetDpsPercentile(fightName, player.role, targetDps),
+          this.getAllDpsPercentile(fightName, player.role, allDps),
+        ]);
+      timings.getDpsPercentiles.push(performance.now() - start);
+
+      outPlayer.dps = {
+        targetDps,
+        targetDpsPercentile,
+        allDps,
+        allDpsPercentile,
+      };
+
+      start = performance.now();
+      let quickness = quicknessGeneration(player);
+      let quicknessPercentile = quickness < 10 ?
+        null :
+        await this.getBuffOutputPercentile(fightName, player.role,
+                                           buffIds.quickness, quickness);
+      if (performance.now() - start > 1) {
+        timings.getBuffOutputPercentile.push(performance.now() - start);
+      }
+      start = performance.now();
+      let alacrity = alacrityGeneration(player);
+      let alacrityPercentile = alacrity < 10 ?
+        null :
+        await this.getBuffOutputPercentile(fightName, player.role,
+                                           buffIds.alacrity, alacrity);
+      if (performance.now() - start > 1) {
+        timings.getBuffOutputPercentile.push(performance.now() - start);
+      }
+      start = performance.now();
+      let might = mightGeneration(player);
+      let mightPercentile = might < 10 ?
+        null :
+        await this.getBuffOutputPercentile(fightName, player.role,
+                                           buffIds.might, might);
+      if (performance.now() - start > 1) {
+        timings.getBuffOutputPercentile.push(performance.now() - start);
+      }
+
+      outPlayer.buffOutput = {
+        quickness,
+        quicknessPercentile,
+        alacrity,
+        alacrityPercentile,
+        might,
+        mightPercentile,
+      };
+
+      outPlayer.mechanics = [];
+      for (let mechanic of log.mechanics) {
+        let times = 0;
+        if (boringMechanics.hasOwnProperty(mechanic.name)) {
+          continue;
+        }
+        if (mechanic.mechanicsData.length === 0) {
+          continue;
+        }
+        for (let occurrence of mechanic.mechanicsData) {
+          if (occurrence.actor === player.name) {
+            times += 1;
+          }
+        }
+        let percentile = 0;
+        let cacheKey = mechanic.name + times;
+        if (mechanicsCache.hasOwnProperty(cacheKey)) {
+          percentile = mechanicsCache[cacheKey];
+        } else if (times > 0) {
+          start = performance.now();
+          percentile = await this.getMechanicPercentile(fightName,
+                                                        mechanic.name, times);
+          timings.getMechanicPercentile.push(performance.now() - start);
+          mechanicsCache[cacheKey] = percentile;
+        }
+
+        outPlayer.mechanics.push({
+          name: mechanic.name,
+          description: mechanic.description,
+          value: times,
+          percentile,
+        });
+      }
+      out.players.push(outPlayer);
+    }
+    timings.getLogPercentiles = performance.now() - timings.getLogPercentiles;
+    let totalPostgres = timings.getLog + timings.getLogStats;
+    timings.getDpsPercentiles.forEach(a => {
+      totalPostgres += a;
+    });
+    timings.getBuffOutputPercentile.forEach(a => {
+      totalPostgres += a;
+    });
+    timings.getMechanicPercentile.forEach(a => {
+      totalPostgres += a;
+    });
+    timings.totalPostgres = totalPostgres;
+    console.log(timings);
+    return out;
   }
 
   async getTargetDpsPercentile(fightName, role, targetDps) {

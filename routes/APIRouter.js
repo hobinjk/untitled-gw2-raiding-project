@@ -99,6 +99,20 @@ export function create(statsModel) {
     }
   );
 
+  APIRouter.get(
+    '/logs/percentiles/:logId',
+    middlewareInsecure(),
+    async (req, res) => {
+      const stats = await statsModel.db.getLogPercentiles(req.params.logId,
+                                                          req.jwt);
+      if (!stats) {
+        res.sendStatus(404);
+        return;
+      }
+      res.json(stats);
+    }
+  );
+
   APIRouter.get('/stats/percentiles/dps', async (req, res) => {
     const fightName = req.query.fightName;
     const role = req.query.role;

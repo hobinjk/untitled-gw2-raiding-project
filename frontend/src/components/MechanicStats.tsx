@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import makePercentile from '../makePercentile';
-import API from '../API';
 
 const boringMechanics = {
   'Got up': true,
@@ -60,64 +59,24 @@ function abbreviate(name: string) {
 }
 
 export default function MechanicStats(props: any) {
-  const { player, log } = props;
+  const { player, stats } = props;
 
   const [mechanicStatsState, setState] = useState<IMechanicStatsState>((() => {
     const mechanicStatsState: IMechanicStatsState = {};
 
-    for (let mechanic of log.mechanics) {
-      let times = 0;
+    for (let mechanic of stats.mechanics) {
       if (boringMechanics.hasOwnProperty(mechanic.name)) {
         continue;
       }
-      if (mechanic.mechanicsData.length === 0) {
-        continue;
-      }
-      for (let occurrence of mechanic.mechanicsData) {
-        if (occurrence.actor === player.name) {
-          times += 1;
-        }
-      }
       mechanicStatsState[mechanic.name] = {
         name: mechanic.description,
-        value: times,
-        percentile: null,
+        value: mechanic.value,
+        percentile: mechanic.percentile,
       };
     }
 
     return mechanicStatsState;
   })());
-
-  const loadPercentile = async (name: string, value: number) => {
-    const query = new URLSearchParams();
-    query.set('fightName', log.fightName);
-    query.set('mechanicName', name);
-    query.set('occurrences', value.toString());
-
-    const res = await API.fetch(`/api/v0/stats/percentiles/mechanic?${query.toString()}`);
-    const percentile: number = (await res.json()).occurrencesPercentile;
-    return percentile;
-  };
-
-  useEffect(() => {
-    for (const name in mechanicStatsState) {
-      (async () => {
-        const stat = mechanicStatsState[name];
-        const percentile = await loadPercentile(name, stat.value);
-        setState((prevState) => {
-          return {
-            ...prevState,
-            [name]: {
-              name: prevState[name].name,
-              value: prevState[name].value,
-              percentile,
-            },
-          };
-        });
-      })();
-    }
-  }, []);
-
 
   return (
     <div>

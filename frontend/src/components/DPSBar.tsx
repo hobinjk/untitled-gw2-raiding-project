@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './DPSBar.css';
 import rarityForPercentile from '../rarityForPercentile';
-import API from '../API';
 
 type IDPSBarState = {
   targetPercentile: number|null,
@@ -12,32 +11,14 @@ export default function DPSBar(props: any) {
   const { player, log, stats } = props;
 
   const [appState, setAppState] = useState<IDPSBarState>({
-    targetPercentile: null,
-    allPercentile: null,
+    targetPercentile: stats.dps.targetDpsPercentile,
+    allPercentile: stats.dps.allDpsPercentile,
   });
-
-  useEffect(() => {
-    const load = async () => {
-      const query = new URLSearchParams();
-      query.set('fightName', log.fightName);
-      query.set('role', player.role);
-      query.set('targetDps', stats.target_dps);
-      query.set('allDps', stats.all_dps);
-      const res = await API.fetch(`/api/v0/stats/percentiles/dps?${query.toString()}`);
-      const {targetPercentile, allPercentile} = await res.json();
-
-      setAppState({
-        targetPercentile,
-        allPercentile
-      });
-    };
-    load();
-  }, [setAppState]);
 
   if (typeof appState.targetPercentile !== 'number' || typeof appState.allPercentile !== 'number') {
     return (
       <div>
-        {stats.target_dps} | {stats.all_dps}
+        {stats.dps.targetDps} | {stats.dps.allDps}
       </div>
     );
   }
@@ -48,16 +29,16 @@ export default function DPSBar(props: any) {
   if (log.fightName.startsWith('Twin Largos') || log.fightName.includes('Kitty Golem')) {
     return (
       <div>
-        <span className={`rarity-${allRarity}`}>{stats.all_dps} | {Math.round(appState.allPercentile)}</span>
+        <span className={`rarity-${allRarity}`}>{stats.dps.allDps} | {Math.round(appState.allPercentile)}</span>
       </div>
     );
   }
 
   return (
     <div>
-      <span className={`rarity-${targetRarity}`}>{stats.target_dps} | {Math.round(appState.targetPercentile)}</span>
+      <span className={`rarity-${targetRarity}`}>{stats.dps.targetDps} | {Math.round(appState.targetPercentile)}</span>
       <br/>
-      <span className={`rarity-${allRarity}`}>{stats.all_dps} | {Math.round(appState.allPercentile)}</span>
+      <span className={`rarity-${allRarity}`}>{stats.dps.allDps} | {Math.round(appState.allPercentile)}</span>
     </div>
   );
 }

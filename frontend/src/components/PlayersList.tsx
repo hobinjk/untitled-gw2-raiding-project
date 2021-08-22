@@ -10,7 +10,7 @@ export default function PlayersList(props: any) {
   }
 
   const statsByAccount: { [account:string]:any; } = {};
-  for (let stat of stats) {
+  for (let stat of stats.players) {
     statsByAccount[stat.account] = stat;
   }
 

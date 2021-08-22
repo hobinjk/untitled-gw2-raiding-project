@@ -28,7 +28,7 @@ function LogView() {
     const load = async () => {
       const res = await API.fetch(`/api/v0/logs/${logId}`);
       const log = await res.json();
-      const resStats = await API.fetch(`/api/v0/logs/stats/${logId}`);
+      const resStats = await API.fetch(`/api/v0/logs/percentiles/${logId}`);
       const dataStats = await resStats.json();
 
       const players: {[name: string]: boolean} = {};
