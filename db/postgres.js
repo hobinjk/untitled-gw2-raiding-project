@@ -24,6 +24,10 @@ class PGDatabase {
   }
 
   async create() {
+    await this.pool.query(`drop index if exists mechanics_stats_mechanic_name`);
+    await this.pool.query(`drop index if exists dps_stats_role`);
+    await this.pool.query(`drop index if exists boon_output_stats_buff_id`);
+    await this.pool.query(`drop index if exists boon_output_stats_role`);
     await this.pool.query(`drop index if exists logs_meta_fight_name_idx`);
     await this.pool.query(`drop index if exists logs_meta_time_start_idx`);
     await this.pool.query(`drop index if exists logs_meta_duration_ms_idx`);
@@ -33,6 +37,7 @@ class PGDatabase {
     await this.pool.query(`drop table if exists players_to_logs`);
     await this.pool.query(`drop table if exists players`);
     await this.pool.query(`drop table if exists logs_meta`);
+    await this.pool.query(`drop table if exists logs_raw`);
     await this.pool.query(`drop table if exists logs`);
     await this.pool.query(`drop table if exists users_api_keys`);
     await this.pool.query(`drop table if exists jsonwebtokens`);
@@ -61,6 +66,11 @@ class PGDatabase {
 
     await this.pool.query(`CREATE TABLE IF NOT EXISTS logs (
       id BIGSERIAL PRIMARY KEY,
+      data jsonb not null
+    )`);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS logs_raw (
+      id BIGSERIAL PRIMARY KEY,
+      log_id BIGSERIAL REFERENCES logs(id),
       data jsonb not null
     )`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS logs_meta (
@@ -107,16 +117,27 @@ class PGDatabase {
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_fight_name_idx ON logs_meta (fight_name)`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_time_start_idx ON logs_meta (time_start)`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_duration_ms_idx ON logs_meta (duration_ms)`);
+
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS mechanics_stats_mechanic_name ON mechanics_stats (mechanic_name)`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS dps_stats_role ON dps_stats (role)`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS boon_output_stats_buff_id ON boon_output_stats (buff_id)`);
+    await this.pool.query(`CREATE INDEX IF NOT EXISTS boon_output_stats_role ON boon_output_stats (role)`);
   }
 
   async insertLog(log, userId, visibility) {
     if (log.logErrors) {
       delete log.logErrors;
     }
+    let rawLog = JSON.parse(JSON.stringify(log)); // :\
+    compressLog(log);
+
     let res = await this.pool.query(
       'INSERT INTO logs (data) VALUES ($1) RETURNING (id)',
       [log]);
     let logId = res.rows[0].id;
+    res = await this.pool.query(
+      'INSERT INTO logs_raw (log_id, data) VALUES ($1, $2)',
+      [logId, rawLog]);
 
     await this.pool.query(
       `INSERT INTO logs_meta SELECT
