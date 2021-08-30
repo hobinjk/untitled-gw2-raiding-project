@@ -166,8 +166,9 @@ export function create(statsModel) {
   });
 
   APIRouter.post('/logs', middleware(), async (req, res) => {
+    const url = req.body.url || req.body.permalink;
     const parts =
-      /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(req.body.url);
+      /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(url);
     if (!parts) {
       console.warn('log url bad');
       res.sendStatus(500);
