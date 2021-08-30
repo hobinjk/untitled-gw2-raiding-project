@@ -165,19 +165,23 @@ export function create(statsModel) {
   });
 
   APIRouter.post('/logs', middleware(), async (req, res) => {
+    let log = req.body.log;
     const url = req.body.url || req.body.permalink;
-    const parts =
-      /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(url);
-    if (!parts) {
-      console.warn('log url bad');
-      res.sendStatus(500);
-      return;
+    if (url) {
+      const parts =
+        /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(url);
+      if (!parts) {
+        console.warn('log url bad');
+        res.sendStatus(500);
+        return;
+      }
+      const slug = parts[1];
+      const logFetch = await fetch(`https://dps.report/getJson?permalink=${slug}`);
+      log = await logFetch.json();
     }
-    const slug = parts[1];
-    const logFetch = await fetch(`https://dps.report/getJson?permalink=${slug}`);
-    const log = await logFetch.json();
+
     if (!log) {
-      console.warn('log fetch failed');
+      console.warn('log missing');
       res.sendStatus(500);
       return;
     }
