@@ -389,10 +389,6 @@ class PGDatabase {
     timings.getLogPercentiles = performance.now();
     timings.getLog = performance.now();
     let log = await this.getLog(id);
-    compressLog(log);
-    for (let key of Object.keys(log.players[0])) {
-      console.log(`players[0].${key}`, JSON.stringify(log.players[0][key]).length);
-    }
     timings.getLog = performance.now() - timings.getLog;
     if (!log) {
       return;
