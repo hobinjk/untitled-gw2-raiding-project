@@ -24,8 +24,8 @@ async function startServer() {
     await statsModel.readLogs('../arcdps.cbtlogs');
   }
 
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({extended: true}));
+  app.use(bodyParser.json({limit: '50mb'}));
+  app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
   app.use('/api/v0', APIRouter.create(statsModel));
   app.use('/api/v0/user', UserRouter.create());
