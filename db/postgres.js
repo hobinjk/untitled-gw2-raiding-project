@@ -146,12 +146,12 @@ class PGDatabase {
         id as log_id,
         $1 as user_id,
         $2 as visibility,
-        (data -> 'success')::boolean AS success,
+        (data -> 'success')::text::boolean AS success,
         data ->> 'fightName' AS fight_name,
         data ->> 'timeStartStd' AS time_start,
         data ->> 'duration' AS duration,
-        (data -> 'phases' -> 0 -> 'end')::int as duration_ms,
-        (data -> 'targets' -> 0 ->> 'healthPercentBurned')::real as health_percent_burned,
+        (data -> 'phases' -> 0 -> 'end')::text::int as duration_ms,
+        (data -> 'targets' -> 0 ->> 'healthPercentBurned')::text::real as health_percent_burned,
         (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players
       FROM logs WHERE id = $3`,
       [userId, visibility, logId]);
