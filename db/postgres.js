@@ -458,7 +458,7 @@ class PGDatabase {
         null :
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.quickness, quickness);
-      if (performance.now() - start > 1 && TIMING_ENABLED) {
+      if (TIMING_ENABLED && performance.now() - start > 1) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
           query: JSON.stringify({role: player.role, quickness}),
@@ -470,7 +470,7 @@ class PGDatabase {
         null :
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.alacrity, alacrity);
-      if (performance.now() - start > 1 && TIMING_ENABLED) {
+      if (TIMING_ENABLED && performance.now() - start > 1) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
           query: JSON.stringify({role: player.role, alacrity}),
@@ -482,7 +482,7 @@ class PGDatabase {
         null :
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.might, might);
-      if (performance.now() - start > 1 && TIMING_ENABLED) {
+      if (TIMING_ENABLED && performance.now() - start > 1) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
           query: JSON.stringify({role: player.role, might}),
@@ -520,10 +520,12 @@ class PGDatabase {
           start = performance.now();
           percentile = await this.getMechanicPercentile(fightName,
                                                         mechanic.name, times);
-          timings.getMechanicPercentile.push({
-            time: performance.now() - start,
-            query: JSON.stringify({name: mechanic.name, times}),
-          });
+          if (TIMING_ENABLED) {
+            timings.getMechanicPercentile.push({
+              time: performance.now() - start,
+              query: JSON.stringify({name: mechanic.name, times}),
+            });
+          }
           mechanicsCache[cacheKey] = percentile;
         }
 
