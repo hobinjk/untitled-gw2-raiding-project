@@ -16,6 +16,8 @@ import Constants from '../Constants.js';
 import pg from 'pg';
 const {Pool} = pg;
 
+import {performance} from 'perf_hooks';
+
 const TIMING_ENABLED = false;
 
 class PGDatabase {
