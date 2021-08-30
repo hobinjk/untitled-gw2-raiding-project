@@ -16,6 +16,8 @@ import Constants from '../Constants.js';
 import pg from 'pg';
 const {Pool} = pg;
 
+const TIMING_ENABLED = false;
+
 class PGDatabase {
   constructor() {
     this.pool = new Pool({
@@ -386,17 +388,25 @@ class PGDatabase {
    */
   async getLogPercentiles(id, _jwt) {
     let timings = {};
-    timings.getLogPercentiles = performance.now();
-    timings.getLog = performance.now();
+    if (TIMING_ENABLED) {
+      timings.getLogPercentiles = performance.now();
+      timings.getLog = performance.now();
+    }
     let log = await this.getLog(id);
-    timings.getLog = performance.now() - timings.getLog;
+    if (TIMING_ENABLED) {
+      timings.getLog = performance.now() - timings.getLog;
+    }
     if (!log) {
       return;
     }
     const fightName = log.fightName;
-    timings.getLogStats = performance.now();
+    if (TIMING_ENABLED) {
+      timings.getLogStats = performance.now();
+    }
     let dpsStats = await this.getLogStats(id);
-    timings.getLogStats = performance.now() - timings.getLogStats;
+    if (TIMING_ENABLED) {
+      timings.getLogStats = performance.now() - timings.getLogStats;
+    }
     const dpsStatsByAccount = {};
     for (let stat of dpsStats) {
       dpsStatsByAccount[stat.account] = stat;
@@ -407,9 +417,11 @@ class PGDatabase {
     };
     let mechanicsCache = {};
 
-    timings.getDpsPercentiles = [];
-    timings.getBuffOutputPercentile = [];
-    timings.getMechanicPercentile = [];
+    if (TIMING_ENABLED) {
+      timings.getDpsPercentiles = [];
+      timings.getBuffOutputPercentile = [];
+      timings.getMechanicPercentile = [];
+    }
     for (let player of log.players) {
       let outPlayer = {
         name: player.name,
@@ -424,10 +436,12 @@ class PGDatabase {
           this.getTargetDpsPercentile(fightName, player.role, targetDps),
           this.getAllDpsPercentile(fightName, player.role, allDps),
         ]);
-      timings.getDpsPercentiles.push({
-        time: performance.now() - start,
-        query: JSON.stringify({role: player.role, targetDps, allDps}),
-      });
+      if (TIMING_ENABLED) {
+        timings.getDpsPercentiles.push({
+          time: performance.now() - start,
+          query: JSON.stringify({role: player.role, targetDps, allDps}),
+        });
+      }
 
       outPlayer.dps = {
         targetDps,
@@ -442,7 +456,7 @@ class PGDatabase {
         null :
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.quickness, quickness);
-      if (performance.now() - start > 1) {
+      if (performance.now() - start > 1 && TIMING_ENABLED) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
           query: JSON.stringify({role: player.role, quickness}),
@@ -454,7 +468,7 @@ class PGDatabase {
         null :
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.alacrity, alacrity);
-      if (performance.now() - start > 1) {
+      if (performance.now() - start > 1 && TIMING_ENABLED) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
           query: JSON.stringify({role: player.role, alacrity}),
@@ -466,7 +480,7 @@ class PGDatabase {
         null :
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.might, might);
-      if (performance.now() - start > 1) {
+      if (performance.now() - start > 1 && TIMING_ENABLED) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
           query: JSON.stringify({role: player.role, might}),
@@ -520,19 +534,21 @@ class PGDatabase {
       }
       out.players.push(outPlayer);
     }
-    timings.getLogPercentiles = performance.now() - timings.getLogPercentiles;
-    let totalPostgres = timings.getLog + timings.getLogStats;
-    timings.getDpsPercentiles.forEach(a => {
-      totalPostgres += a.time;
-    });
-    timings.getBuffOutputPercentile.forEach(a => {
-      totalPostgres += a.time;
-    });
-    timings.getMechanicPercentile.forEach(a => {
-      totalPostgres += a.time;
-    });
-    timings.totalPostgres = totalPostgres;
-    console.log(timings);
+    if (TIMING_ENABLED) {
+      timings.getLogPercentiles = performance.now() - timings.getLogPercentiles;
+      let totalPostgres = timings.getLog + timings.getLogStats;
+      timings.getDpsPercentiles.forEach(a => {
+        totalPostgres += a.time;
+      });
+      timings.getBuffOutputPercentile.forEach(a => {
+        totalPostgres += a.time;
+      });
+      timings.getMechanicPercentile.forEach(a => {
+        totalPostgres += a.time;
+      });
+      timings.totalPostgres = totalPostgres;
+      console.log(timings);
+    }
     return out;
   }
 
