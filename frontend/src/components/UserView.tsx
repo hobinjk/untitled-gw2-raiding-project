@@ -24,8 +24,13 @@ export default function UserView() {
 
   useEffect(() => {
     const load = async () => {
-      const res = await API.fetch('/api/v0/user');
-      const user = await res.json();
+      let user;
+      try {
+        const res = await API.fetch('/api/v0/user');
+        user = await res.json();
+      } catch (e) {
+        console.warn(e);
+      }
 
       setAppState({
         loading: false,

@@ -33,7 +33,6 @@ export function create(statsModel) {
   });
 
   APIRouter.get('/logs', middlewareInsecure(), async (req, res) => {
-    console.log('/logs', req.jwt);
     let query = {
       fightName: req.query.fightName,
       role: req.query.role,

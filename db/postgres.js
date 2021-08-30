@@ -644,7 +644,7 @@ class PGDatabase {
     }
     const equal = await Passwords.compare(password, realHash);
     if (equal) {
-      return await this.getUser(name);
+      return await this.getUserIdByName(name);
     }
     return false;
   }

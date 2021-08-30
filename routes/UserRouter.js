@@ -9,7 +9,6 @@ export function create() {
   // UserRouter.use('/', JWTMiddleware.middleware);
 
   UserRouter.get('/', middleware(), async (req, res) => {
-    console.log('user', req.jwt);
     res.json(await db.getUser(req.jwt.user));
   });
 
@@ -19,7 +18,6 @@ export function create() {
 
   UserRouter.post('/register', async (req, res) => {
     const {username, email, password} = req.body;
-    console.log(req.body);
     await db.insertUser(username, email, password);
     res.redirect('/user');
   });
