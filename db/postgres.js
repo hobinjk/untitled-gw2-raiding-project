@@ -424,7 +424,10 @@ class PGDatabase {
           this.getTargetDpsPercentile(fightName, player.role, targetDps),
           this.getAllDpsPercentile(fightName, player.role, allDps),
         ]);
-      timings.getDpsPercentiles.push(performance.now() - start);
+      timings.getDpsPercentiles.push({
+        time: performance.now() - start,
+        query: JSON.stringify({role: player.role, targetDps, allDps}),
+      });
 
       outPlayer.dps = {
         targetDps,
@@ -440,7 +443,10 @@ class PGDatabase {
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.quickness, quickness);
       if (performance.now() - start > 1) {
-        timings.getBuffOutputPercentile.push(performance.now() - start);
+        timings.getBuffOutputPercentile.push({
+          time: performance.now() - start,
+          query: JSON.stringify({role: player.role, quickness}),
+        });
       }
       start = performance.now();
       let alacrity = alacrityGeneration(player);
@@ -449,7 +455,10 @@ class PGDatabase {
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.alacrity, alacrity);
       if (performance.now() - start > 1) {
-        timings.getBuffOutputPercentile.push(performance.now() - start);
+        timings.getBuffOutputPercentile.push({
+          time: performance.now() - start,
+          query: JSON.stringify({role: player.role, alacrity}),
+        });
       }
       start = performance.now();
       let might = mightGeneration(player);
@@ -458,7 +467,10 @@ class PGDatabase {
         await this.getBuffOutputPercentile(fightName, player.role,
                                            buffIds.might, might);
       if (performance.now() - start > 1) {
-        timings.getBuffOutputPercentile.push(performance.now() - start);
+        timings.getBuffOutputPercentile.push({
+          time: performance.now() - start,
+          query: JSON.stringify({role: player.role, might}),
+        });
       }
 
       outPlayer.buffOutput = {
@@ -492,7 +504,10 @@ class PGDatabase {
           start = performance.now();
           percentile = await this.getMechanicPercentile(fightName,
                                                         mechanic.name, times);
-          timings.getMechanicPercentile.push(performance.now() - start);
+          timings.getMechanicPercentile.push({
+            time: performance.now() - start,
+            query: JSON.stringify({name: mechanic.name, times}),
+          });
           mechanicsCache[cacheKey] = percentile;
         }
 
@@ -508,13 +523,13 @@ class PGDatabase {
     timings.getLogPercentiles = performance.now() - timings.getLogPercentiles;
     let totalPostgres = timings.getLog + timings.getLogStats;
     timings.getDpsPercentiles.forEach(a => {
-      totalPostgres += a;
+      totalPostgres += a.time;
     });
     timings.getBuffOutputPercentile.forEach(a => {
-      totalPostgres += a;
+      totalPostgres += a.time;
     });
     timings.getMechanicPercentile.forEach(a => {
-      totalPostgres += a;
+      totalPostgres += a.time;
     });
     timings.totalPostgres = totalPostgres;
     console.log(timings);
