@@ -10,6 +10,7 @@ import Home from './components/Home';
 import LogsView from './components/LogsView';
 import LogView from './components/LogView';
 import LeaderboardView from './components/LeaderboardView';
+import GraphsView from './components/GraphsView';
 import UploadView from './components/UploadView';
 import UserView from './components/UserView';
 import API from './API';
@@ -43,6 +44,7 @@ function App() {
               <Link className="navbar-item" to="/logs?personal=true">Personal Logs</Link>
             }
             <Link className="navbar-item" to="/leaderboard">Leaderboard</Link>
+            <Link className="navbar-item" to="/graphs">Graphs</Link>
             {API.isLoggedIn() && (<>
               <Link className="navbar-item" to="/upload">Upload</Link>
               <Link className="navbar-item" to="/user">Profile</Link>
@@ -67,6 +69,9 @@ function App() {
           </Route>
           <Route path="/leaderboard">
             <LeaderboardView />
+          </Route>
+          <Route path="/graphs">
+            <GraphsView />
           </Route>
           <Route path="/upload">
             <UploadView />

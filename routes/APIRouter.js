@@ -164,6 +164,61 @@ export function create(statsModel) {
     });
   });
 
+  APIRouter.get('/stats/targetDps', middlewareInsecure(), async (req, res) => {
+    let query = {
+      fightName: req.query.fightName,
+      role: req.query.role,
+    };
+
+    res.json(await statsModel.db.filterTargetDpsStats(query));
+  });
+
+  APIRouter.get('/stats/roles', middlewareInsecure(), async (req, res) => {
+    let query = {
+      fightName: req.query.fightName,
+    };
+
+    res.json(await statsModel.db.getRoles(query));
+  });
+
+  APIRouter.get(
+    '/stats/mechanic-times', middlewareInsecure(), async (req, res) => {
+      let query = {
+        fightName: req.query.fightName,
+        name: req.query.name,
+      };
+
+      res.json(await statsModel.db.filterMechanicStats(query));
+    });
+
+  APIRouter.get('/stats/mechanics', middlewareInsecure(), async (req, res) => {
+    let query = {
+      fightName: req.query.fightName,
+    };
+
+    res.json(await statsModel.db.getMechanics(query));
+  });
+
+  APIRouter.get('/stats/buffOutput', middlewareInsecure(), async (req, res) => {
+    let query = {
+      fightName: req.query.fightName,
+      role: req.query.role,
+      buffId: req.query.buffId,
+    };
+
+    res.json(await statsModel.db.filterBoonOutputStats(query));
+  });
+
+  APIRouter.get(
+    '/stats/buffOutputRoles', middlewareInsecure(), async (req, res) => {
+      let query = {
+        fightName: req.query.fightName,
+        buffId: req.query.buffId,
+      };
+
+      res.json(await statsModel.db.getBoonOutputRoles(query));
+    });
+
   APIRouter.post('/logs', middleware(), async (req, res) => {
     let log = req.body.log;
     const url = req.body.url || req.body.permalink;

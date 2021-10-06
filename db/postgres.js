@@ -40,6 +40,7 @@ class PGDatabase {
     await this.pool.query(`drop table if exists mechanics_stats`);
     await this.pool.query(`drop table if exists players_to_logs`);
     await this.pool.query(`drop table if exists players`);
+    await this.pool.query(`drop table if exists logs_tags`);
     await this.pool.query(`drop table if exists logs_meta`);
     await this.pool.query(`drop table if exists logs_raw`);
     await this.pool.query(`drop table if exists logs`);
@@ -117,6 +118,11 @@ class PGDatabase {
       mechanic_name VARCHAR(64) NOT NULL,
       occurrences integer
     )`);
+    await this.pool.query(`CREATE TABLE IF NOT EXISTS logs_tags (
+      log_id BIGSERIAL REFERENCES logs(id),
+      tag text not null,
+    )`);
+
 
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_fight_name_idx ON logs_meta (fight_name)`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS logs_meta_time_start_idx ON logs_meta (time_start)`);
@@ -210,6 +216,9 @@ class PGDatabase {
       }
 
       if (!log.fightName.includes('Golem')) {
+        if (!log.mechanics) {
+          log.mechanics = [];
+        }
         for (let mechanic of log.mechanics) {
           let occurrences = 0;
           for (let occurrence of mechanic.mechanicsData) {
@@ -603,6 +612,132 @@ class PGDatabase {
       [durationMs, fightName]);
     return res.rows[0].percent_rank * 100;
   }
+
+  async filterTargetDpsStats(query) {
+    const {role, fightName} = query;
+    let res;
+    if (fightName) {
+      res = await this.pool.query(
+        `select (target_dps) from dps_stats
+        left join logs_meta on dps_stats.log_id = logs_meta.log_id
+        where role = $1 and logs_meta.fight_name = $2`, [role, fightName]);
+    } else {
+      res = await this.pool.query(
+        `select (target_dps) from dps_stats
+        where role = $1`, [role]);
+    }
+    return res.rows.map(row => row.target_dps);
+  }
+
+  async getRoles(query) {
+    const {fightName} = query;
+    let res;
+    if (fightName) {
+      res = await this.pool.query(
+        `select distinct (role) from dps_stats
+        left join logs_meta on dps_stats.log_id = logs_meta.log_id
+        where logs_meta.fight_name = $1`, [fightName]);
+    } else {
+      res = await this.pool.query(
+        `select distinct (role) from dps_stats`);
+    }
+    return res.rows.map(row => row.role);
+  }
+
+  async filterMechanicStats(query) {
+    const {name, fightName} = query;
+    let res;
+    if (fightName) {
+      res = await this.pool.query(
+        `select (occurrences) from mechanics_stats
+        left join logs_meta on mechanics_stats.log_id = logs_meta.log_id
+        where mechanic_name = $1 and logs_meta.fight_name = $2`, [name, fightName]);
+    } else {
+      res = await this.pool.query(
+        `select (occurrences) from mechanics_stats
+        where mechanic_name = $1`, [name]);
+    }
+    return res.rows.map(row => row.occurrences);
+  }
+
+  async getMechanics(query) {
+    const {fightName} = query;
+    let res;
+    if (fightName) {
+      res = await this.pool.query(
+        `select distinct (mechanic_name) from mechanics_stats
+        left join logs_meta on mechanics_stats.log_id = logs_meta.log_id
+        where logs_meta.fight_name = $1`, [fightName]);
+    } else {
+      res = await this.pool.query(
+        `select distinct (mechanic_name) from mechanics_stats`);
+    }
+    return res.rows.map(row => row.mechanic_name);
+  }
+
+  async filterBoonOutputStats(query) {
+    const {role, buffId, fightName} = query;
+    let res;
+    if (fightName) {
+      res = await this.pool.query(
+        `select (output) from boon_output_stats
+        left join logs_meta on boon_output_stats.log_id = logs_meta.log_id
+        where role = $1 and buff_id = $2 and logs_meta.fight_name = $3`, [role, buffId, fightName]);
+    } else {
+      res = await this.pool.query(
+        `select (output) from boon_output_stats
+        where role = $1 and buff_id = $2`, [role, buffId, fightName]);
+    }
+    return res.rows.map(row => row.output);
+  }
+
+  async getBoonOutputRoles(query) {
+    const {buffId, fightName} = query;
+    let res;
+    if (fightName) {
+      res = await this.pool.query(
+        `select distinct (role) from boon_output_stats
+        left join logs_meta on boon_output_stats.log_id = logs_meta.log_id
+        where buff_id = $1 and logs_meta.fight_name = $2`, [buffId, fightName]);
+    } else {
+      res = await this.pool.query(
+        `select distinct (role) from boon_output_stats where buff_id = $1`, [buffId]);
+    }
+    return res.rows.map(row => row.role);
+  }
+
+  async insertLogTag(logId, userId, tag) {
+    let res = await this.pool.query(
+      'select (user_id) from logs_meta where log_id = $1', [logId]);
+    if (res.rows.length === 0) {
+      return;
+    }
+    let uploader = res.rows[0].user_id;
+    if (uploader !== userId) {
+      console.warning('Uploader is not tagger');
+      return;
+    }
+    res = await this.pool.query(
+      `insert into logs_tags (log_id, tag) VALUES ($1, $2) RETURNING (id)`, [logId, tag]);
+    return res.rows[0].id;
+  }
+
+  async deleteLogTag(logId, userId, tag) {
+    let res = await this.pool.query(
+      'select (user_id) from logs_meta where log_id = $1', [logId]);
+    if (res.rows.length === 0) {
+      return;
+    }
+    let uploader = res.rows[0].user_id;
+    if (uploader !== userId) {
+      console.warning('Uploader is not tagger');
+      return;
+    }
+    res = await this.pool.query(
+      `delete from logs_tags WHERE (log_id = $1 and tag = $2)`, [logId, tag]);
+    return res.rowCount;
+  }
+
 
   async insertUser(name, email, password) {
     let passwordHash = null;
