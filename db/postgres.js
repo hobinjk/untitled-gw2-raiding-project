@@ -706,6 +706,20 @@ class PGDatabase {
     return res.rows.map(row => row.role);
   }
 
+  async filterFightDurations(query) {
+    const {fightName} = query;
+    let res = await this.pool.query(
+      `select (duration_ms) from logs_meta
+      where fight_name = $1 and success = true`, [fightName]);
+    return res.rows.map(row => row.duration_ms / 1000);
+  }
+
+  async getFightNames() {
+    let res = await this.pool.query(
+      `select distinct (fight_name) from logs_meta where success = true`);
+    return res.rows.map(row => row.fight_name);
+  }
+
   async insertLogTag(logId, userId, tag) {
     let res = await this.pool.query(
       'select (user_id) from logs_meta where log_id = $1', [logId]);

@@ -1,5 +1,6 @@
 import React from 'react';
 
+import FightDurationsGraph from './FightDurationsGraph';
 import TargetDpsGraph from './TargetDpsGraph';
 import MechanicsGraph from './MechanicsGraph';
 import BuffOutputGraph from './BuffOutputGraph';
@@ -28,12 +29,20 @@ function GraphsView() {
     'Cardinal Sabir',
     'Qadim the Peerless',
   ];
+  const golemNames = [
+    'Standard Kitty Golem',
+    'Medium Kitty Golem',
+    'Large Kitty Golem',
+  ];
 
   const buffNames = ['Might', 'Quickness', 'Alacrity'];
 
   return (
     <section className="section">
       <h1 className="title">Graphs</h1>
+
+    <h2 className="subtitle">Durations</h2>
+    <FightDurationsGraph />
 
     {fightNames.map(fightName => {
       return (<div>
@@ -48,6 +57,14 @@ function GraphsView() {
             <BuffOutputGraph fightName={fightName} buffName={buffName.toLowerCase()} />
           </>);
         })}
+      </div>);
+    })}
+
+    {golemNames.map(fightName => {
+      return (<div>
+        <h2 className="subtitle">{fightName}</h2>
+        <h3 className="subtitle">Target DPS</h3>
+        <TargetDpsGraph fightName={fightName} />
       </div>);
     })}
     </section>

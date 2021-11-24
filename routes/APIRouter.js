@@ -219,6 +219,19 @@ export function create(statsModel) {
       res.json(await statsModel.db.getBoonOutputRoles(query));
     });
 
+  APIRouter.get(
+    '/stats/fightDuration', middlewareInsecure(), async (req, res) => {
+      let query = {
+        fightName: req.query.fightName,
+      };
+
+      res.json(await statsModel.db.filterFightDurations(query));
+    });
+
+  APIRouter.get('/stats/fightNames', middlewareInsecure(), async (req, res) => {
+    res.json(await statsModel.db.getFightNames());
+  });
+
   APIRouter.post('/logs', middleware(), async (req, res) => {
     let log = req.body.log;
     const url = req.body.url || req.body.permalink;

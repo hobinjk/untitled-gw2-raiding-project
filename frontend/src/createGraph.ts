@@ -53,7 +53,7 @@ export default function createGraph(svgRoot: any, outputByRole: {[role: string]:
     .domain([d3.min(bins, (d: any) => d.x0), d3.max(bins, (d: any) => d.x1)])
     .rangeRound([margin.left, width - margin.right]);
   let y = d3.scaleLinear()
-    .domain([d3.min(bins, (d: any) => d.range[0]), d3.max(bins, (d: any) => d.range[1])]).nice()
+    .domain([0, d3.max(bins, (d: any) => d.range[1])]).nice()
     .range([height - margin.bottom, margin.top])
   let xAxis = (g: any) => g
     .attr("transform", `translate(0,${height - margin.bottom})`)
