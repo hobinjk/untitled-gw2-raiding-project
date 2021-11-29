@@ -151,6 +151,10 @@ class PGDatabase {
     let rawLog = JSON.parse(JSON.stringify(log)); // :\
     compressLog(log);
 
+    if (!log.mechanics) {
+      log.mechanics = [];
+    }
+
     let res = await this.pool.query(
       'INSERT INTO logs (data) VALUES ($1) RETURNING (id)',
       [log]);
@@ -243,9 +247,6 @@ class PGDatabase {
       }
 
       if (!log.fightName.includes('Golem')) {
-        if (!log.mechanics) {
-          log.mechanics = [];
-        }
         for (let mechanic of log.mechanics) {
           let occurrences = 0;
           for (let occurrence of mechanic.mechanicsData) {
