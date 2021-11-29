@@ -241,7 +241,7 @@ export function create(statsModel) {
         /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(url);
       if (!parts) {
         console.warn('log url bad');
-        res.sendStatus(500);
+        res.status(500).json({msg: 'log url bad'});
         return;
       }
       const slug = parts[1];
@@ -251,7 +251,7 @@ export function create(statsModel) {
 
     if (!log) {
       console.warn('log missing');
-      res.sendStatus(500);
+      res.status(500).json({msg: 'log missing'});
       return;
     }
 
@@ -268,6 +268,11 @@ export function create(statsModel) {
 
     const id = await statsModel.addLog(log, uploaderId,
                                        visibility);
+
+    if (req.body.permalink) {
+      res.json({msg: `Log can be viewed at /logs/${id}`});
+      return;
+    }
 
     res.redirect(307, `/logs/${id}`);
   });
