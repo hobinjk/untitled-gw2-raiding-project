@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import PlayersComposition from './PlayersComposition';
 import makePercentile from '../makePercentile';
 import API from '../API';
@@ -10,6 +10,8 @@ type ILogsListItemState = {
 
 
 export default function LogsListItem(props: any) {
+  const location = useLocation();
+
   const {
     logId,
     success,
@@ -18,16 +20,31 @@ export default function LogsListItem(props: any) {
     duration,
     durationMs,
     players,
-    healthPercentBurned
+    healthPercentBurned,
+    tags,
   } = props;
 
   const [appState, setAppState] = useState<ILogsListItemState>({
     percentile: null,
   });
 
-  let dateParts = timeStart.split(' ');
-  // let date = new Date(`${dateParts[0]} ${dateParts[1]}${dateParts[2]}`);
-  let prettyStart = `${dateParts[0]} ${dateParts[1]}`;
+  function queryPlus(qp: {[key:string]: string}) {
+    let params = new URLSearchParams(location.search);
+    params.delete('start');
+
+    for (let key in qp) {
+      // if (key === 'tags') {
+      //   let curTags = (params.get('tags') || '').split(',');
+      //   let newTags = curTags.concat(qp[key].split(','));
+      //   params.set(key, newTags.join(','));
+      // }
+      params.set(key, qp[key]);
+    }
+    return params.toString();
+  }
+
+  let dateParts = new Date(timeStart).toISOString().split('T');
+  let prettyStart = `${dateParts[0]} ${dateParts[1].split('.')[0]}`;
   let durationRe = /((\d+)h )?((\d+)m )?(\d+)s (\d+)ms/;
   let durationParts = durationRe.exec(duration);
   let durPretty = duration;
@@ -76,7 +93,7 @@ export default function LogsListItem(props: any) {
         }
       </td>
       <td>
-        {fightName}
+        <Link to={`/logs?${queryPlus({fightName: fightName})}`}>{fightName}</Link>
       </td>
       <td>
         {prettyStart}
@@ -86,6 +103,13 @@ export default function LogsListItem(props: any) {
       </td>
       <td>
         <PlayersComposition players={players} />
+      </td>
+      <td>
+        {tags.map((tag: string) => {
+          return (<>
+            <Link to={`/logs?${queryPlus({tags: tag})}`}>{tag}</Link>
+          </>);
+        })}
       </td>
       <td>
         <Link to={`/logs/${logId}`}>More</Link>
