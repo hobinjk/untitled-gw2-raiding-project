@@ -40,6 +40,7 @@ export function create(statsModel) {
       order: req.query.order,
       success: req.query.success,
       personal: req.query.personal,
+      tags: req.query.tags,
     };
     let page = {
       start: parseInt(req.query.start) || 0,

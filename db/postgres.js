@@ -6,6 +6,8 @@ import {
   boringMechanics,
 } from '../guessRole.js';
 
+import gw2IdentifierGenerate from 'gw2-identifier';
+
 import {
   compressLog,
 } from '../util/compressLog.js';
@@ -84,7 +86,7 @@ class PGDatabase {
       visibility varchar(16) not null,
       success boolean,
       fight_name VARCHAR(64) NOT NULL,
-      time_start VARCHAR(64) NOT NULL,
+      time_start TIMESTAMP NOT NULL,
       duration VARCHAR(16) NOT NULL,
       duration_ms integer,
       health_percent_burned real,
@@ -120,7 +122,7 @@ class PGDatabase {
     )`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS logs_tags (
       log_id BIGSERIAL REFERENCES logs(id),
-      tag text not null,
+      tag text not null
     )`);
 
 
@@ -132,6 +134,14 @@ class PGDatabase {
     await this.pool.query(`CREATE INDEX IF NOT EXISTS dps_stats_role ON dps_stats (role)`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS boon_output_stats_buff_id ON boon_output_stats (buff_id)`);
     await this.pool.query(`CREATE INDEX IF NOT EXISTS boon_output_stats_role ON boon_output_stats (role)`);
+  }
+
+  generateSessionTag() {
+    return 'session-' + gw2IdentifierGenerate(5);
+  }
+
+  deltaTimeAbs(dateA, dateB) {
+    return Math.abs(dateA.getTime() - dateB.getTime()) / 1000;
   }
 
   async insertLog(log, userId, visibility) {
@@ -156,13 +166,30 @@ class PGDatabase {
         $2 as visibility,
         (data -> 'success')::text::boolean AS success,
         data ->> 'fightName' AS fight_name,
-        data ->> 'timeStartStd' AS time_start,
+        (data ->> 'timeStartStd')::timestamp AS time_start,
         data ->> 'duration' AS duration,
         (data -> 'phases' -> 0 -> 'end')::text::int as duration_ms,
         (data -> 'targets' -> 0 ->> 'healthPercentBurned')::text::real as health_percent_burned,
         (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players
       FROM logs WHERE id = $3`,
       [userId, visibility, logId]);
+
+    let logMeta = await this.getLogMeta(logId);
+    let previousLog = await this.getPreviousLogMeta(userId, logMeta.time_start);
+    let defaultTags = [];
+    if (previousLog &&
+        this.deltaTimeAbs(previousLog.time_start,
+                          logMeta.time_start) < 60 * 60) {
+      const prevLogTags = await this.getLogTags(previousLog.log_id,
+                                                parseInt(userId));
+      defaultTags = prevLogTags.filter(tag => tag.startsWith('session-'));
+    } else {
+      defaultTags = [this.generateSessionTag()];
+    }
+
+    for (let tag of defaultTags) {
+      await this.insertLogTag(logId, userId, tag);
+    }
 
     for (const player of log.players) {
       let existingPlayer = await this.pool.query(
@@ -295,9 +322,19 @@ class PGDatabase {
       args.push(query.success);
     }
 
+    if (query.tags) {
+      for (let tag of query.tags.split(',')) {
+        conditions.push(`log_id IN (SELECT log_id FROM logs_tags WHERE tag = $${args.length + 1})`);
+        args.push(tag);
+      }
+    }
+
     if (conditions.length === 0) {
       let count = await this.pool.query(`SELECT count(*) from logs_meta`);
       let logs = await this.pool.query(`SELECT ${logMeta} ${orderLimitOffset}`);
+      for (let logMeta of logs.rows) {
+        await this.tagifyLogMeta(logMeta);
+      }
       return {
         logs: logs.rows,
         page,
@@ -313,6 +350,9 @@ class PGDatabase {
       let logs = await this.pool.query(
         `SELECT ${logMeta} ${where} ${orderLimitOffset}`,
         args);
+      for (let logMeta of logs.rows) {
+        await this.tagifyLogMeta(logMeta);
+      }
       return {
         logs: logs.rows,
         page,
@@ -349,6 +389,16 @@ class PGDatabase {
       return;
     }
     return logs.rows[0].data;
+  }
+
+  async getPreviousLogMeta(userId, timeStart) {
+    let logs = await this.pool.query(
+      `select log_id from logs_meta where user_id = $1 and time_start < $2 order by time_start desc limit 1`,
+      [userId, timeStart]);
+    if (!logs || !logs.rows || !logs.rows.length) {
+      return;
+    }
+    return await this.getLogMeta(logs.rows[0].log_id);
   }
 
   /**
@@ -732,8 +782,8 @@ class PGDatabase {
       return;
     }
     res = await this.pool.query(
-      `insert into logs_tags (log_id, tag) VALUES ($1, $2) RETURNING (id)`, [logId, tag]);
-    return res.rows[0].id;
+      `insert into logs_tags (log_id, tag) VALUES ($1, $2)`, [logId, tag]);
+    return res.rowCount > 0;
   }
 
   async deleteLogTag(logId, userId, tag) {
@@ -752,6 +802,29 @@ class PGDatabase {
     return res.rowCount;
   }
 
+  async getLogTags(logId, userId) {
+    let meta = await this.getLogMeta(logId);
+    if (!meta) {
+      console.log('no meta', logId);
+      return;
+    }
+    let uploader = meta.user_id;
+    if (uploader !== userId) {
+      // TODO this is fine if the log is public
+      console.warning('Uploader is not tagger');
+      return;
+    }
+    let res = await this.pool.query(
+      `select (tag) from logs_tags where log_id = $1`, [logId]);
+    return res.rows.map(row => row.tag);
+  }
+
+  async tagifyLogMeta(logMeta) {
+    let res = await this.pool.query(
+      `select (tag) from logs_tags where log_id = $1`, [logMeta.log_id]);
+    let tags = res.rows.map(row => row.tag);
+    logMeta.tags = tags;
+  }
 
   async insertUser(name, email, password) {
     let passwordHash = null;
