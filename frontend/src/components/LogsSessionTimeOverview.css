@@ -1,0 +1,22 @@
+.logs-session-time-overview-graph-container {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 3rem;
+  background: #777;
+  position: relative;
+}
+
+.logs-session-time-overview-graph-success,
+.logs-session-time-overview-graph-failure {
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+}
+.logs-session-time-overview-graph-success {
+  background: green;
+}
+.logs-session-time-overview-graph-failure {
+  background: red;
+}

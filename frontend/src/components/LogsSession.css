@@ -1,0 +1,11 @@
+.logs-session-container {
+  display: flex;
+}
+
+.logs-session-title {
+  flex: 1 1 50%;
+}
+.logs-session-date {
+  flex: 1 1 50%;
+  text-align: right;
+}

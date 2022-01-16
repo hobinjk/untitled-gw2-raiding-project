@@ -6,11 +6,13 @@ import {
 
 import './LogsView.css';
 import LogsList from './LogsList';
+import LogsSession from './LogsSession';
 import API from '../API';
 
 type ILogsViewState = {
   loading: boolean,
   logs: any,
+  session: string|null,
   logsLinkFirst: string|null,
   logsLinkPrev: string|null,
   logsLinkNext: string|null,
@@ -23,6 +25,18 @@ function makeQueryWithStart(query: URLSearchParams, start: number) {
   return qws.toString();
 }
 
+function getSession(query: URLSearchParams): string|null {
+  let tags = query.get('tags');
+  if (!tags) {
+    return null;
+  }
+  let sessionTags = tags.split(',').filter(s => s.startsWith('session'));
+  if (sessionTags.length === 0) {
+    return null;
+  }
+  return sessionTags[0];
+}
+
 function LogsView() {
   const location = useLocation();
 
@@ -33,6 +47,7 @@ function LogsView() {
     logsLinkPrev: null,
     logsLinkNext: null,
     logsLinkLast: null,
+    session: null,
   });
 
   useEffect(() => {
@@ -43,6 +58,7 @@ function LogsView() {
       logsLinkPrev: null,
       logsLinkNext: null,
       logsLinkLast: null,
+      session: null,
     });
     const load = async () => {
       const query = new URLSearchParams(location.search);
@@ -52,6 +68,7 @@ function LogsView() {
       let logsLinkFirst = `/logs?${makeQueryWithStart(query, 0)}`;
       let logsLinkPrev: string|null = null;
       let logsLinkNext: string|null = null;
+      let session: string|null = getSession(query);
       let lastStart = Math.floor(data.count / data.page.limit) * data.page.limit;
       let logsLinkLast = `/logs?${makeQueryWithStart(query, lastStart)}`;
 
@@ -72,6 +89,7 @@ function LogsView() {
         logsLinkPrev,
         logsLinkNext,
         logsLinkLast,
+        session,
       });
     };
     load();
@@ -80,6 +98,8 @@ function LogsView() {
 
   return (
     <section className="section">
+      {appState.session &&
+        <LogsSession session={appState.session} logs={appState.logs} />}
       <div className="container is-centered">
         <LogsList loading={appState.loading} logs={appState.logs} />
       </div>
