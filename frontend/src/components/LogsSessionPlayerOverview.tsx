@@ -25,6 +25,9 @@ export default function LogsSessionPlayerOverview(props: any) {
 
   for (const log of logs) {
     for (const player of log.players) {
+      if (!player.account.includes('.')) {
+        continue;
+      }
       if (!initialPlayerStats[player.account]) {
         initialPlayerStats[player.account] = {
           account: player.account,
