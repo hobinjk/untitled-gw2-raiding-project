@@ -778,8 +778,8 @@ class PGDatabase {
       return;
     }
     let uploader = res.rows[0].user_id;
-    if (uploader !== userId) {
-      console.warning('Uploader is not tagger');
+    if (uploader.toString() !== userId.toString()) {
+      console.warn('Uploader is not tagger', uploader, userId);
       return;
     }
     res = await this.pool.query(
@@ -794,7 +794,7 @@ class PGDatabase {
       return;
     }
     let uploader = res.rows[0].user_id;
-    if (uploader !== userId) {
+    if (uploader.toString() !== userId.toString()) {
       console.warning('Uploader is not tagger');
       return;
     }
@@ -810,7 +810,7 @@ class PGDatabase {
       return;
     }
     let uploader = meta.user_id;
-    if (uploader !== userId) {
+    if (uploader.toString() !== userId.toString()) {
       // TODO this is fine if the log is public
       console.warning('Uploader is not tagger');
       return;
