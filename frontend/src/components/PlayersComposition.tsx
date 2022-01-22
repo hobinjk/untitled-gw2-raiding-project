@@ -3,7 +3,7 @@ import SpecIcon from './SpecIcon';
 
 export default function PlayersComposition(props: any) {
   const players = props.players.filter((player: any) => {
-    return player.account !== 'Conjured Sword';
+    return player.account.includes('.');
   });
 
   let elts = [];
