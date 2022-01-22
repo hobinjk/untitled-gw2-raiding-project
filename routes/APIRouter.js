@@ -236,6 +236,7 @@ export function create(statsModel) {
   APIRouter.post('/logs', middleware(), async (req, res) => {
     let log = req.body.log;
     const url = req.body.url || req.body.permalink;
+    let dpsReportLink = null;
     if (url) {
       const parts =
         /https:\/\/dps.report\/([a-zA-Z0-9-_]+)/.exec(url);
@@ -244,6 +245,7 @@ export function create(statsModel) {
         res.status(500).json({msg: 'log url bad'});
         return;
       }
+      dpsReportLink = url;
       const slug = parts[1];
       const logFetch = await fetch(`https://dps.report/getJson?permalink=${slug}`);
       log = await logFetch.json();
@@ -267,7 +269,7 @@ export function create(statsModel) {
     }
 
     const id = await statsModel.addLog(log, uploaderId,
-                                       visibility);
+                                       visibility, dpsReportLink);
 
     if (req.body.permalink) {
       res.json({msg: `Log can be viewed at /logs/${id}`});

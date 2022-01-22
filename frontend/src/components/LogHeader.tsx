@@ -1,5 +1,6 @@
 import React from 'react';
 import API from '../API';
+import './LogHeader.css';
 
 export default function LogHeader(props: any) {
   const { loading, log } = props;
@@ -28,20 +29,34 @@ export default function LogHeader(props: any) {
   }
 
   return (
-    <div>
-      <h1 className="title">{log.fightName}</h1>
-      <p>
-        Uploaded by {log.uploaderName}
-        {log.deletable &&
-          <input className="button" type="button" value="Delete" onClick={onDelete}/>
-        }
-      </p>
-      <p>
-        {log.success ? 'Success' : 'Failure'}
-      </p>
-      <p>
-        {log.timeStart} &ndash; {log.duration}
-      </p>
+    <div className="log-header-container">
+      <div className="log-header-title">
+        <h1 className="title">{log.fightName}</h1>
+        <p>
+          Uploaded by {log.uploaderName}
+          {log.deletable &&
+            <input className="button" type="button" value="Delete" onClick={onDelete}/>
+          }
+        </p>
+      </div>
+      <div className="log-header-details">
+        <p>
+          {log.success ? 'Success' : 'Failure'} in {log.duration}
+        </p>
+        <p>
+          {log.timeStart}
+        </p>
+        <p>
+          Tags: {log.meta.tags.join(', ')}
+        </p>
+        <p>
+          {log.meta.dps_report_link &&
+            <a href={log.meta.dps_report_link}>
+              {log.meta.dps_report_link.replace(/^https?:\/\//, '')}
+            </a>
+          }
+        </p>
+      </div>
     </div>
   );
 }

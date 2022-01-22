@@ -1,0 +1,12 @@
+.log-header-container {
+  display: flex;
+}
+
+.log-header-title {
+  flex: 1 1 50%;
+}
+.log-header-details {
+  flex: 1 1 50%;
+  text-align: right;
+}
+

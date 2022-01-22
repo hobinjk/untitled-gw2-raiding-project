@@ -22,6 +22,7 @@ export default function LogsListItem(props: any) {
     players,
     healthPercentBurned,
     tags,
+    dpsReportLink,
   } = props;
 
   const [appState, setAppState] = useState<ILogsListItemState>({
@@ -110,6 +111,10 @@ export default function LogsListItem(props: any) {
             <Link to={`/logs?${queryPlus({tags: tag})}`}>{tag}</Link>
           </>);
         })}
+      </td>
+      <td>
+        {dpsReportLink &&
+          <a href={dpsReportLink}>dps.report</a>}
       </td>
       <td>
         <Link to={`/logs/${logId}`}>More</Link>

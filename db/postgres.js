@@ -90,7 +90,8 @@ class PGDatabase {
       duration VARCHAR(16) NOT NULL,
       duration_ms integer,
       health_percent_burned real,
-      players jsonb
+      players jsonb,
+      dps_report_link text
     )`);
     await this.pool.query(`CREATE TABLE IF NOT EXISTS players(
       id BIGSERIAL PRIMARY KEY,
@@ -144,7 +145,7 @@ class PGDatabase {
     return Math.abs(dateA.getTime() - dateB.getTime()) / 1000;
   }
 
-  async insertLog(log, userId, visibility) {
+  async insertLog(log, userId, visibility, dpsReportLink) {
     if (log.logErrors) {
       delete log.logErrors;
     }
@@ -174,9 +175,10 @@ class PGDatabase {
         data ->> 'duration' AS duration,
         (data -> 'phases' -> 0 -> 'end')::text::int as duration_ms,
         (data -> 'targets' -> 0 ->> 'healthPercentBurned')::text::real as health_percent_burned,
-        (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players
-      FROM logs WHERE id = $3`,
-      [userId, visibility, logId]);
+        (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players,
+        $3 as dps_report_link
+      FROM logs WHERE id = $4`,
+      [userId, visibility, dpsReportLink, logId]);
 
     let logMeta = await this.getLogMeta(logId);
     let previousLog = await this.getPreviousLogMeta(userId, logMeta.time_start);
@@ -380,16 +382,21 @@ class PGDatabase {
 
   /**
    * @param {BigSerial} id
+   * @param {JSONWebToken} _jwt
    * @return {Object} raw json data of log
    */
-  async getLog(id) {
+  async getLog(id, _jwt) {
     let logs = await this.pool.query(
       `SELECT data FROM logs WHERE id = $1`,
       [id]);
     if (!logs || !logs.rows || !logs.rows.length) {
       return;
     }
-    return logs.rows[0].data;
+    let log = logs.rows[0].data;
+    let meta = await this.getLogMeta(id);
+    await this.tagifyLogMeta(meta);
+    log.meta = meta;
+    return log;
   }
 
   async getPreviousLogMeta(userId, timeStart) {
@@ -448,16 +455,16 @@ class PGDatabase {
 
   /**
    * @param {BigSerial} id
-   * @param {JSONWebToken} _jwt
+   * @param {JSONWebToken} jwt
    * @return {Object} Every percentile from the log
    */
-  async getLogPercentiles(id, _jwt) {
+  async getLogPercentiles(id, jwt) {
     let timings = {};
     if (TIMING_ENABLED) {
       timings.getLogPercentiles = performance.now();
       timings.getLog = performance.now();
     }
-    let log = await this.getLog(id);
+    let log = await this.getLog(id, jwt);
     if (TIMING_ENABLED) {
       timings.getLog = performance.now() - timings.getLog;
     }

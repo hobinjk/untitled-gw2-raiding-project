@@ -48,7 +48,9 @@ export default class StatsModel {
     }
   }
 
-  async addLog(log, userId, visibility) {
+  async addLog(log, userId,
+               visibility = Constants.LOG_VISIBILITY_PUBLIC,
+               dpsReportLink = null) {
     for (let player of log.players) {
       player.role = guessRole(log, player);
       if (log.success) {
@@ -95,7 +97,8 @@ export default class StatsModel {
     }
     return await this.db.insertLog(
       log, userId || this.uploader,
-      visibility || Constants.LOG_VISIBILITY_PUBLIC);
+      visibility,
+      dpsReportLink);
   }
 }
 

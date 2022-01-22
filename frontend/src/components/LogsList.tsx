@@ -38,6 +38,8 @@ export default function LogsList(props: any) {
           </th>
           <th>
           </th>
+          <th>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -47,7 +49,8 @@ export default function LogsList(props: any) {
             success={log.success} fightName={log.fight_name}
             timeStart={log.time_start} duration={log.duration}
             durationMs={log.duration_ms} players={log.players}
-            healthPercentBurned={log.health_percent_burned} tags={log.tags} />
+            healthPercentBurned={log.health_percent_burned} tags={log.tags}
+            dpsReportLink={log.dps_report_link} />
         );
       })}
       </tbody>
