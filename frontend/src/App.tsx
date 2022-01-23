@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   BrowserRouter as Router,
-  Switch,
+  Routes,
   Route,
   Link
 } from 'react-router-dom';
@@ -57,29 +57,15 @@ function App() {
       </nav>
 
       <main>
-        <Switch>
-          <Route exact path="/">
-            <Home />
-          </Route>
-          <Route path="/logs/:logId">
-            <LogView />
-          </Route>
-          <Route path="/logs">
-            <LogsView />
-          </Route>
-          <Route path="/leaderboard">
-            <LeaderboardView />
-          </Route>
-          <Route path="/graphs">
-            <GraphsView />
-          </Route>
-          <Route path="/upload">
-            <UploadView />
-          </Route>
-          <Route path="/user">
-            <UserView />
-          </Route>
-        </Switch>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/logs/:logId" element={<LogView />} />
+          <Route path="/logs" element={<LogsView />} />
+          <Route path="/leaderboard" element={<LeaderboardView />} />
+          <Route path="/graphs" element={<GraphsView />} />
+          <Route path="/upload" element={<UploadView />} />
+          <Route path="/user" element={<UserView />} />
+        </Routes>
       </main>
     </Router>
   );
