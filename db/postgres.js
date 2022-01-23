@@ -846,6 +846,10 @@ class PGDatabase {
     return res.rows[0].id;
   }
 
+  /**
+   * @param {number} userId
+   * @return {User}
+   */
   async getUser(userId) {
     const res = await this.pool.query(
       `select name, email from users where id = $1`,
@@ -854,10 +858,14 @@ class PGDatabase {
       return;
     }
     let user = res.rows[0];
-    user.keys = [];
+    user.keys = await this.getUserKeys(userId);
     return user;
   }
 
+  /**
+   * @param {string} name
+   * @return {number} userId
+   */
   async getUserIdByName(name) {
     const res = await this.pool.query(
       `select (id) from users where name = $1`,
@@ -868,6 +876,11 @@ class PGDatabase {
     return res.rows[0].id;
   }
 
+  /**
+   * @param {string} name
+   * @param {string} password
+   * @param {number?} userId if successful
+   */
   async attemptLogin(name, password) {
     const res = await this.pool.query(
       `select (password_hash) from users where name = $1`,
@@ -884,6 +897,47 @@ class PGDatabase {
       return await this.getUserIdByName(name);
     }
     return false;
+  }
+
+  /**
+   * @param {number} userId
+   * @param {Array<Key>}
+   */
+  async getUserKeys(userId) {
+    const res = await this.pool.query(
+      `select key, account from users_api_keys where user_id = $1`,
+      [userId]);
+    return res.rows.map(row => {
+      return {
+        key: row.key,
+        account: row.account,
+      };
+    });
+  }
+
+  /**
+   * @param {number} userId
+   * @param {string} key
+   * @return {number} number of keys deleted
+   */
+  async deleteUserKey(userId, key) {
+    const res = await this.pool.query(
+      `delete from users_api_keys where user_id = $1 and key = $2`,
+      [userId, key]);
+    return res.rowCount;
+  }
+
+  /**
+   * @param {number} userId
+   * @param {string} key
+   * @param {string} account
+   */
+  async addUserKey(userId, key, account) {
+    const res = await this.pool.query(
+      `insert into users_api_keys (user_id, key, account) values ($1, $2, $3)`,
+      [userId, key, account]);
+    console.log(res);
+    return res.rowCount;
   }
 
   /**

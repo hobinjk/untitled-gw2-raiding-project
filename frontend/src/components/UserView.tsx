@@ -68,14 +68,23 @@ export default function UserView() {
       <div className="container">
         <p>Name: {appState.user.name}</p>
         <p>Email: {appState.user.email}</p>
-        {appState.user.keys.map((key) => {
-          return (
-            <UserKeyItem key={key} />
-          );
-        })}
-        {false &&
-          <UserKeyAdd user={appState.user} />
-        }
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Verified Account</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {appState.user.keys.map((key) => {
+              console.log('key', key);
+              return (
+                <UserKeyItem apiKey={key} />
+              );
+            })}
+          </tbody>
+        </table>
+        <UserKeyAdd user={appState.user} />
       </div>
     </section>
   );
