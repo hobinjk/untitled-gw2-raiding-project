@@ -325,7 +325,21 @@ class PGDatabase {
       )`);
       args.push(jwt.user);
     } else {
-      conditions.push(`visibility = '${Constants.LOG_VISIBILITY_PUBLIC}'`);
+      const tags = (query.tags || '').split(',');
+      let anySession = false;
+      for (const tag of tags) {
+        if (tag.startsWith('session-')) {
+          anySession = true;
+          break;
+        }
+      }
+      if (!anySession) {
+        conditions.push(`visibility = '${Constants.LOG_VISIBILITY_PUBLIC}'`);
+      } else {
+        // Allow viewing unlisted logs with specific session tag
+        conditions.push(`(visibility = '${Constants.LOG_VISIBILITY_PUBLIC}' or
+                          visibility = '${Constants.LOG_VISIBILITY_UNLISTED}')`);
+      }
     }
 
     if (query.account) {
