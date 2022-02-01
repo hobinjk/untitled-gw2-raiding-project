@@ -268,8 +268,20 @@ export function create(statsModel) {
       visibility = Constants.LOG_VISIBILITY_PUBLIC;
     }
 
-    const id = await statsModel.addLog(log, uploaderId,
-                                       visibility, dpsReportLink);
+    let id;
+    try {
+      id = await statsModel.addLog(log, uploaderId,
+                                   visibility, dpsReportLink);
+
+      if (typeof id === 'object') {
+        res.status(500).json({msg: `${id.error}`});
+        return;
+      }
+    } catch (e) {
+      res.status(500).json({msg: `Server error: ${e}`});
+      return;
+    }
+
 
     if (req.body.permalink) {
       res.json({msg: `Log can be viewed at /logs/${id}`});

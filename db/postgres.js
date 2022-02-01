@@ -149,6 +149,27 @@ class PGDatabase {
     if (log.logErrors) {
       delete log.logErrors;
     }
+    let user = await this.getUser(userId);
+    if (!user) {
+      return {
+        error: 'Unknown user',
+      };
+    }
+
+    let accounts = user.keys.map(k => k.account);
+    let anyAccountPresentInLog = false;
+    for (let player of log.players) {
+      if (accounts.includes(player.account)) {
+        anyAccountPresentInLog = true;
+        break;
+      }
+    }
+    if (!anyAccountPresentInLog) {
+      return {
+        error: 'User does not have a verified account present in log',
+      };
+    }
+
     let rawLog = JSON.parse(JSON.stringify(log)); // :\
     compressLog(log);
 
