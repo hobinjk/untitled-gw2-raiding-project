@@ -204,9 +204,13 @@ class PGDatabase {
     let logMeta = await this.getLogMeta(logId);
     let previousLog = await this.getPreviousLogMeta(userId, logMeta.time_start);
     let defaultTags = [];
-    if (previousLog &&
-        this.deltaTimeAbs(previousLog.time_start,
-                          logMeta.time_start) < 60 * 60) {
+    let usablePrevLog = previousLog &&
+      this.deltaTimeAbs(previousLog.time_start,
+                        logMeta.time_start) < 60 * 60 &&
+      logMeta.fight_name.includes('Golem') ===
+      previousLog.fight_name.includes('Golem');
+
+    if (usablePrevLog) {
       const prevLogTags = await this.getLogTags(previousLog.log_id,
                                                 parseInt(userId));
       defaultTags = prevLogTags.filter(tag => tag.startsWith('session-'));
