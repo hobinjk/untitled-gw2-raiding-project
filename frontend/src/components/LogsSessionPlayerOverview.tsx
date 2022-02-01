@@ -76,7 +76,11 @@ export default function LogsSessionPlayerOverview(props: any) {
             if (!mechanicsByPlayer[account]) {
               mechanicsByPlayer[account] = [];
             }
-            mechanicsByPlayer[account].push(Object.assign({name: mechanic.name, account}, occurence));
+            mechanicsByPlayer[account].push(Object.assign({
+              name: mechanic.name,
+              success: log.success,
+              account
+            }, occurence));
           }
         }
         return mechanicsByPlayer;
@@ -89,6 +93,9 @@ export default function LogsSessionPlayerOverview(props: any) {
       for (let allMechLog of allMechanics) {
         for (let playerName in allMechLog) {
           for (let occ of allMechLog[playerName]) {
+            if (!occ.success) {
+              continue;
+            }
             if (occ.name === 'Dead') {
               let stats = appState.playerStats[playerName]
               stats.deaths = (stats.deaths as number) + 1;
