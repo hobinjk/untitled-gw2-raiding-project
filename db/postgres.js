@@ -459,6 +459,9 @@ class PGDatabase {
       `DELETE FROM mechanics_stats WHERE log_id = $1`,
       [id]);
     await this.pool.query(
+      `DELETE FROM logs_tags WHERE log_id = $1`,
+      [id]);
+    await this.pool.query(
       `DELETE FROM logs_raw WHERE log_id = $1`,
       [id]);
     await this.pool.query(
