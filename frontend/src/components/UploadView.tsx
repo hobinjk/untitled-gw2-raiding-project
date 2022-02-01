@@ -22,12 +22,22 @@ export default function UploadView() {
         },
         body: JSON.stringify(appState),
       });
-      console.log(res);
       if (!res.ok) {
-        alert('real error todo');
+        let body;
+        try {
+          body = await res.json();
+        } catch (e) {
+          console.warn(e);
+        }
+        console.warn(body);
+        if (body.msg) {
+          alert(body.msg);
+        }
         return;
       }
-      window.location.href = res.url;
+      if (res.url) {
+        window.location.href = res.url;
+      }
     })();
   };
 
