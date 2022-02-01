@@ -314,8 +314,15 @@ class PGDatabase {
           count: 0,
         };
       }
-      conditions.push(`user_id = $${args.length + 1}`);
-      console.log(jwt);
+      // Should figure out literally any other way to do this
+      conditions.push(`(
+        (user_id = $${args.length + 1}) OR
+        (logs_meta.log_id IN (
+          select log_id from players_to_logs where players_to_logs.player_id = (
+            select id from players RIGHT JOIN users_api_keys ON players.account = users_api_keys.account where user_id = $${args.length + 1}
+          )
+        ))
+      )`);
       args.push(jwt.user);
     } else {
       conditions.push(`visibility = '${Constants.LOG_VISIBILITY_PUBLIC}'`);
