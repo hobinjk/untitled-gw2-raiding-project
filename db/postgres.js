@@ -300,8 +300,7 @@ class PGDatabase {
   async filterLogsMetadata(query, page = {start: 0, limit: 20}, jwt) {
     const logMeta = `* FROM logs_meta`;
 
-    if (typeof order !== 'number' || typeof page.limit !== 'number' ||
-        typeof page.start !== 'number') {
+    if (typeof page.limit !== 'number' || typeof page.start !== 'number') {
       console.error('Attempted sql injection uh oh', order, page);
       return {
         logs: [],
