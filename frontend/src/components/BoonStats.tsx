@@ -14,7 +14,7 @@ type IBoonStatsState = {
 export default function BoonStats(props: any) {
   const { stats } = props;
 
-  const state = {
+  const state: IBoonStatsState = {
     might: {
       name: 'Might',
       value: stats.buffOutput.might,
