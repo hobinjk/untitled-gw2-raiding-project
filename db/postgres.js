@@ -826,6 +826,43 @@ class PGDatabase {
     return res.rows.map(row => row.role);
   }
 
+  async getTargetDpsLeaderboard(query, _jwt) {
+    let {fightName, role, _personal} = query;
+    const limit = 10;
+
+    let statement = `select
+         players.account,
+         dps_stats.role,
+         dps_stats.target_dps,
+         dps_stats.all_dps,
+         dps_stats.log_id,
+         logs_meta.fight_name,
+         logs_meta.time_start,
+         logs_meta.duration,
+         logs_meta.duration_ms,
+         logs_meta.players,
+         logs_meta.dps_report_link
+      from dps_stats
+      left join players on players.id = player_id
+      left join logs_meta on logs_meta.log_id = dps_stats.log_id`;
+    let conditions = [];
+    let args = [];
+    if (fightName) {
+      conditions.push(`logs_meta.fight_name = $${args.length + 1}`);
+      args.push(fightName);
+    }
+    if (role) {
+      conditions.push(`role = $${args.length + 1}`);
+      args.push(role);
+    }
+    conditions.push(`logs_meta.success = true`);
+    statement += ` where ` + conditions.join(' and ');
+    statement += ` order by target_dps desc limit $${args.length + 1}`;
+    args.push(limit);
+    const res = await this.pool.query(statement, args);
+    return res.rows;
+  }
+
   async filterFightDurations(query) {
     const {fightName} = query;
     let res = await this.pool.query(

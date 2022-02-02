@@ -233,6 +233,17 @@ export function create(statsModel) {
     res.json(await statsModel.db.getFightNames());
   });
 
+  APIRouter.get(
+    '/stats/targetDpsLeaderboard', middlewareInsecure(), async (req, res) => {
+      let query = {
+        fightName: req.query.fightName,
+        role: req.query.role,
+        personal: req.query.personal,
+      };
+
+      res.json(await statsModel.db.getTargetDpsLeaderboard(query, req.jwt));
+    });
+
   APIRouter.post('/logs', middleware(), async (req, res) => {
     let log = req.body.log;
     const url = req.body.url || req.body.permalink;

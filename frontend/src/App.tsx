@@ -11,6 +11,7 @@ import LogsView from './components/LogsView';
 import LogView from './components/LogView';
 import LeaderboardView from './components/LeaderboardView';
 import GraphsView from './components/GraphsView';
+import SoloLeaderboardsView from './components/SoloLeaderboardsView';
 import UploadView from './components/UploadView';
 import UserView from './components/UserView';
 import API from './API';
@@ -45,6 +46,7 @@ function App() {
             }
             <Link className="navbar-item" to="/leaderboard">Leaderboard</Link>
             <Link className="navbar-item" to="/graphs">Graphs</Link>
+            <Link className="navbar-item" to="/solo-leaderboards">Solo Leaderboards</Link>
             {API.isLoggedIn() && (<>
               <Link className="navbar-item" to="/upload">Upload</Link>
               <Link className="navbar-item" to="/user">Profile</Link>
@@ -63,6 +65,7 @@ function App() {
           <Route path="/logs" element={<LogsView />} />
           <Route path="/leaderboard" element={<LeaderboardView />} />
           <Route path="/graphs" element={<GraphsView />} />
+          <Route path="/solo-leaderboards" element={<SoloLeaderboardsView />} />
           <Route path="/upload" element={<UploadView />} />
           <Route path="/user" element={<UserView />} />
         </Routes>
