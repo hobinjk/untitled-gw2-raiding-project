@@ -1,7 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import {
-  Link,
-} from 'react-router-dom';
 import DpsLeaderboardItem from './DpsLeaderboardItem';
 import API from '../API';
 

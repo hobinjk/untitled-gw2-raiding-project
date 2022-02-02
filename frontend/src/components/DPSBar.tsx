@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './DPSBar.css';
 import rarityForPercentile from '../rarityForPercentile';
 
@@ -8,12 +8,12 @@ type IDPSBarState = {
 };
 
 export default function DPSBar(props: any) {
-  const { player, log, stats } = props;
+  const { log, stats } = props;
 
-  const [appState, setAppState] = useState<IDPSBarState>({
+  const appState = {
     targetPercentile: stats.dps.targetDpsPercentile,
     allPercentile: stats.dps.allDpsPercentile,
-  });
+  };
 
   if (typeof appState.targetPercentile !== 'number' || typeof appState.allPercentile !== 'number') {
     return (

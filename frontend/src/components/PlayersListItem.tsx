@@ -14,10 +14,10 @@ export default function PlayersListItem(props: any) {
           <h2 className="subtitle name">{ player.name } <span className="account">{ player.account }</span></h2>
         </div>
         <p><small>{ player.role }</small></p>
-        <DPSBar player={player} log={log} stats={stats} />
+        <DPSBar log={log} stats={stats} />
       </td>
       <td>
-        <BoonStats player={player} log={log} stats={stats} />
+        <BoonStats stats={stats} />
       </td>
       <td>
         <MechanicStats player={player} log={log} stats={stats} />

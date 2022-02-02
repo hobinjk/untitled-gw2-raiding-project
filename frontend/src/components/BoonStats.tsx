@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import makePercentile from '../makePercentile';
 
 type IBoonState = {
@@ -12,9 +12,9 @@ type IBoonStatsState = {
 };
 
 export default function BoonStats(props: any) {
-  const { player, log, stats } = props;
+  const { stats } = props;
 
-  const [state, setState] = useState<IBoonStatsState>({
+  const state = {
     might: {
       name: 'Might',
       value: stats.buffOutput.might,
@@ -30,7 +30,7 @@ export default function BoonStats(props: any) {
       value: stats.buffOutput.alacrity,
       percentile: stats.buffOutput.alacrityPercentile,
     },
-  });
+  };
 
   return (
     <div>

@@ -6,12 +6,9 @@ export default function PlayersComposition(props: any) {
     return player.account.includes('.');
   });
 
-  let elts = [];
-
   if (players.length === 0) {
     return (<span></span>);
   }
-
 
   let group = players[0].group;
 

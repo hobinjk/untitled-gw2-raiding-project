@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import makePercentile from '../makePercentile';
 
 const boringMechanics = {
@@ -59,9 +59,9 @@ function abbreviate(name: string) {
 }
 
 export default function MechanicStats(props: any) {
-  const { player, stats } = props;
+  const { stats } = props;
 
-  const [mechanicStatsState, setState] = useState<IMechanicStatsState>((() => {
+  const mechanicStatsState = (() => {
     const mechanicStatsState: IMechanicStatsState = {};
 
     for (let mechanic of stats.mechanics) {
@@ -76,7 +76,7 @@ export default function MechanicStats(props: any) {
     }
 
     return mechanicStatsState;
-  })());
+  })();
 
   return (
     <div>

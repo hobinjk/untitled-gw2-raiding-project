@@ -1,6 +1,6 @@
 let userJwt = window.localStorage.getItem('userJwt');
 
-export default {
+const API = {
   isLoggedIn: function() {
     return !!userJwt;
   },
@@ -35,3 +35,5 @@ export default {
     }
   },
 };
+
+export default API;
