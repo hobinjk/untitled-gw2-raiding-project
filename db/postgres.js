@@ -173,7 +173,7 @@ class PGDatabase {
     let rawLog = JSON.parse(JSON.stringify(log)); // :\
     compressLog(log);
 
-    if (!log.mechanics) {
+    if (!Array.isArray(log.mechanics)) {
       log.mechanics = [];
     }
 
@@ -618,6 +618,9 @@ class PGDatabase {
       };
 
       outPlayer.mechanics = [];
+      if (!Array.isArray(log.mechanics)) {
+        log.mechanics = [];
+      }
       for (let mechanic of log.mechanics) {
         let times = 0;
         if (boringMechanics.hasOwnProperty(mechanic.name)) {
