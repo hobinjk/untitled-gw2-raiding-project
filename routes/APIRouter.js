@@ -239,9 +239,10 @@ export function create(statsModel) {
         fightName: req.query.fightName,
         role: req.query.role,
         personal: req.query.personal,
+        all: false,
       };
 
-      res.json(await statsModel.db.getTargetDpsLeaderboard(query, req.jwt));
+      res.json(await statsModel.db.getDpsLeaderboard(query, req.jwt));
     });
 
   APIRouter.post('/logs', middleware(), async (req, res) => {

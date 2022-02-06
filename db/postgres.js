@@ -825,9 +825,13 @@ class PGDatabase {
     return res.rows.map(row => row.role);
   }
 
-  async getTargetDpsLeaderboard(query, _jwt) {
-    let {fightName, role, _personal} = query;
+  async getDpsLeaderboard(query, _jwt) {
+    let {fightName, role, _personal, all} = query;
     const limit = 10;
+    if (fightName === 'Twin Largos') {
+      all = true;
+    }
+    const dpsOrder = all ? 'all_dps' : 'target_dps';
 
     let statement = `select
          players.account,
@@ -856,7 +860,7 @@ class PGDatabase {
     }
     conditions.push(`logs_meta.success = true`);
     statement += ` where ` + conditions.join(' and ');
-    statement += ` order by target_dps desc limit $${args.length + 1}`;
+    statement += ` order by ${dpsOrder} desc limit $${args.length + 1}`;
     args.push(limit);
     const res = await this.pool.query(statement, args);
     return res.rows;
