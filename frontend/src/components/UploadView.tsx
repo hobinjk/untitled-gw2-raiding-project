@@ -1,65 +1,55 @@
 import React, {useState} from 'react';
-import API from '../API';
+import UploadLogItem from './UploadLogItem';
 
 type IUploadViewState = {
-  url: string,
+  urls: string,
   visibility: string,
+  submissions: Array<string>,
 };
 
 export default function UploadView() {
   let [appState, setAppState] = useState<IUploadViewState>({
-    url: '',
+    urls: '',
     visibility: 'public',
+    submissions: [],
   });
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    (async () => {
-      const res = await API.fetch('/api/v0/logs', {
-        method: 'POST',
-        headers: {
-          'Content-type': 'application/json',
-        },
-        body: JSON.stringify(appState),
-      });
-      if (!res.ok) {
-        let body;
-        try {
-          body = await res.json();
-        } catch (e) {
-          console.warn(e);
-        }
-        console.warn(body);
-        if (body.msg) {
-          alert(body.msg);
-        }
-        return;
-      }
-      if (res.url) {
-        window.location.href = res.url;
-      }
-    })();
+    let urls = appState.urls.split('\n').filter(line => {
+      return line.includes('dps.report');
+    });
+
+    setAppState({
+      ...appState,
+      urls: '',
+      submissions: appState.submissions.concat(urls),
+    });
   };
 
-  const onChange = (e: React.ChangeEvent<HTMLInputElement|HTMLSelectElement>) => {
+  const onChange = (e: React.ChangeEvent<HTMLTextAreaElement|HTMLSelectElement>) => {
     let newState: any = Object.assign({}, appState);
-    console.log('onChange', e.target);
     if (!e.target ||
         !newState.hasOwnProperty(e.target.name)) {
       return;
     }
-    newState[e.target.name] = e.target.value;
+    const newValue = e.target.value || e.target.textContent;
+    newState[e.target.name] = newValue;
     setAppState(newState);
   };
 
   return (
     <section className="section">
+      {appState.submissions.map((submission) => {
+        return <UploadLogItem url={submission} visibility={appState.visibility}/>
+      })}
       <form onSubmit={onSubmit}>
         <div className="field">
-          <label className="label" htmlFor="url">dps.report url</label>
+          <label className="label" htmlFor="urls">dps.report urls</label>
           <div className="control">
-            <input className="input" type="text" onChange={onChange} name="url"
-                   id="url" required placeholder="https://dps.report/..." />
+            <textarea className="textarea" placeholder="https://dps.report/..."
+                      rows={3} onChange={onChange} name="urls" id="urls" value={appState.urls}>
+            </textarea>
           </div>
         </div>
         <div className="field">
