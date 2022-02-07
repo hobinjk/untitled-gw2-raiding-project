@@ -436,6 +436,18 @@ class PGDatabase {
   }
 
   /**
+   * @param {string} slug
+   * @return {Array<Object>} log metadata
+   */
+  async getLogMetasByDpsReportSlug(slug) {
+    slug = '%' + slug;
+    let logs = await this.pool.query(
+      `SELECT * FROM logs_meta WHERE dps_report_link LIKE $1`,
+      [slug]);
+    return logs.rows;
+  }
+
+  /**
    * @param {BigSerial} id
    * @param {JSONWebToken} _jwt
    * @return {Object} raw json data of log

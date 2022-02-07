@@ -259,6 +259,12 @@ export function create(statsModel) {
       }
       dpsReportLink = url;
       const slug = parts[1];
+      let existingLogs = await statsModel.db.getLogMetasByDpsReportSlug(slug);
+      if (existingLogs.length > 0) {
+        let allLogLinks = existingLogs.map(logMeta => `/logs/${logMeta.log_id}`);
+        res.status(500).json({msg: `log already uploaded at ` + allLogLinks.join(', ')});
+        return;
+      }
       const logFetch = await fetch(`https://dps.report/getJson?permalink=${slug}`);
       log = await logFetch.json();
     }
