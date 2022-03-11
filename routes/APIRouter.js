@@ -265,8 +265,21 @@ export function create(statsModel) {
         res.status(500).json({msg: `log already uploaded at ` + allLogLinks.join(', ')});
         return;
       }
-      const logFetch = await fetch(`https://dps.report/getJson?permalink=${slug}`);
-      log = await logFetch.json();
+      const maxTries = 4;
+      for (let i = 0; i < maxTries; i++) {
+        try {
+          const logFetch = await fetch(`https://dps.report/getJson?permalink=${slug}`);
+          log = await logFetch.json();
+        } catch (e) {
+          console.warn('log fetch failed', e);
+        }
+        if (log) {
+          break;
+        }
+        await new Promise((res) => {
+          setTimeout(res, 1000);
+        });
+      }
     }
 
     if (!log) {
