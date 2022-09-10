@@ -2,6 +2,7 @@ import React from 'react';
 import './LogsSession.css';
 import LogsSessionTimeOverview from './LogsSessionTimeOverview';
 import LogsSessionPlayerOverview from './LogsSessionPlayerOverview';
+import LogsSessionOverviewCopy from './LogsSessionOverviewCopy';
 
 export default function LogsSession(props: any) {
   const { logs, session } = props;
@@ -44,6 +45,7 @@ export default function LogsSession(props: any) {
         </div>
         <div className="logs-session-date">
           {prettyStart}
+          <LogsSessionOverviewCopy logs={logs} />
         </div>
       </div>
       <div className="container mb-4">
