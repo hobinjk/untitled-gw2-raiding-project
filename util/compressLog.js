@@ -11,6 +11,8 @@ export function compressLog(log) {
     account: true,
     dpsTargets: true,
     dpsAll: true,
+    group: true,
+    hasCommanderTag: true,
     role: true,
     squadBuffs: true,
     healing: true,
