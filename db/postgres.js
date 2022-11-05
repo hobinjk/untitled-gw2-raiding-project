@@ -16,7 +16,7 @@ import Passwords from './Passwords.js';
 import Constants from '../Constants.js';
 
 import pg from 'pg';
-const {Pool} = pg;
+const {Pool} = pg.native;
 
 import {performance} from 'perf_hooks';
 
