@@ -170,7 +170,7 @@ class PGDatabase {
       };
     }
 
-    let rawLog = JSON.parse(JSON.stringify(log)); // :\
+    // let rawLog = JSON.parse(JSON.stringify(log)); // :\
     compressLog(log);
 
     if (!Array.isArray(log.mechanics)) {
@@ -181,9 +181,9 @@ class PGDatabase {
       'INSERT INTO logs (data) VALUES ($1) RETURNING (id)',
       [log]);
     let logId = res.rows[0].id;
-    res = await this.pool.query(
-      'INSERT INTO logs_raw (log_id, data) VALUES ($1, $2)',
-      [logId, rawLog]);
+    // res = await this.pool.query(
+    //   'INSERT INTO logs_raw (log_id, data) VALUES ($1, $2)',
+    //   [logId, rawLog]);
 
     await this.pool.query(
       `INSERT INTO logs_meta SELECT
