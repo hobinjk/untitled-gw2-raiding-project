@@ -309,6 +309,7 @@ export function create(statsModel) {
         return;
       }
     } catch (e) {
+      console.error(e);
       res.status(500).json({msg: `Server error: ${e}`});
       return;
     }
