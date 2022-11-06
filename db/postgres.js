@@ -84,6 +84,7 @@ class PGDatabase {
       log_id BIGSERIAL REFERENCES logs(id),
       user_id BIGSERIAL REFERENCES users(id),
       visibility varchar(16) not null,
+      emboldened boolean,
       success boolean,
       fight_name VARCHAR(64) NOT NULL,
       time_start TIMESTAMP NOT NULL,
@@ -171,6 +172,7 @@ class PGDatabase {
     }
 
     // let rawLog = JSON.parse(JSON.stringify(log)); // :\
+    let emboldened = log.buffMap.hasOwnProperty('b68087');
     compressLog(log);
 
     if (!Array.isArray(log.mechanics)) {
@@ -190,6 +192,7 @@ class PGDatabase {
         id as log_id,
         $1 as user_id,
         $2 as visibility,
+        $3 as emboldened,
         (data -> 'success')::text::boolean AS success,
         data ->> 'fightName' AS fight_name,
         (data ->> 'timeStartStd')::timestamp AS time_start,
@@ -197,9 +200,9 @@ class PGDatabase {
         (data -> 'phases' -> 0 -> 'end')::text::int as duration_ms,
         (data -> 'targets' -> 0 ->> 'healthPercentBurned')::text::real as health_percent_burned,
         (SELECT jsonb_agg(filtered_player) from jsonb_array_elements(data -> 'players') player, jsonb_build_object('account', player -> 'account', 'group', player -> 'group', 'role', player -> 'role') filtered_player) as players,
-        $3 as dps_report_link
-      FROM logs WHERE id = $4`,
-      [userId, visibility, dpsReportLink, logId]);
+        $4 as dps_report_link
+      FROM logs WHERE id = $5`,
+      [userId, visibility, emboldened, dpsReportLink, logId]);
 
     let logMeta = await this.getLogMeta(logId);
     let previousLog = await this.getPreviousLogMeta(userId, logMeta.time_start);
@@ -378,6 +381,11 @@ class PGDatabase {
     if (query.success === 'true' || query.success === 'false') {
       conditions.push(`success = $${args.length + 1}`);
       args.push(query.success);
+    }
+
+    if (query.emboldened === 'true' || query.emboldened === 'false') {
+      conditions.push(`emboldened = $${args.length + 1}`);
+      args.push(query.emboldened);
     }
 
     if (query.tags) {
@@ -699,59 +707,65 @@ class PGDatabase {
     return out;
   }
 
-  async getTargetDpsPercentile(fightName, role, targetDps) {
+  async getTargetDpsPercentile(fightName, role, targetDps, allowEmboldened = false) {
+    let emboldenedCheck = allowEmboldened ? '' : 'logs_meta.emboldened = false and';
     const res = await this.pool.query(
       `select percent_rank($1) within group (order by target_dps asc)
       from dps_stats left join logs_meta on dps_stats.log_id = logs_meta.log_id
-      where logs_meta.fight_name = $2 and dps_stats.role = $3`,
+      where logs_meta.fight_name = $2 and ${emboldenedCheck} dps_stats.role = $3`,
       [targetDps, fightName, role]);
     return res.rows[0].percent_rank * 100;
   }
 
-  async getAllDpsPercentile(fightName, role, dps) {
+  async getAllDpsPercentile(fightName, role, dps, allowEmboldened = false) {
+    let emboldenedCheck = allowEmboldened ? '' : 'logs_meta.emboldened = false and';
     const res = await this.pool.query(
       `select percent_rank($1) within group (order by all_dps asc)
       from dps_stats left join logs_meta on dps_stats.log_id = logs_meta.log_id
-      where logs_meta.fight_name = $2 and dps_stats.role = $3`,
+      where logs_meta.fight_name = $2 and ${emboldenedCheck} dps_stats.role = $3`,
       [dps, fightName, role]);
     return res.rows[0].percent_rank * 100;
   }
 
-  async getBuffOutputPercentile(fightName, role, buffId, output) {
+  async getBuffOutputPercentile(fightName, role, buffId, output, allowEmboldened = false) {
+    let emboldenedCheck = allowEmboldened ? '' : 'logs_meta.emboldened = false and';
     const res = await this.pool.query(
       `select percent_rank($1) within group (order by output asc)
       from boon_output_stats left join logs_meta on boon_output_stats.log_id = logs_meta.log_id
-      where logs_meta.fight_name = $2 and boon_output_stats.role = $3 and boon_output_stats.buff_id = $4`,
+      where logs_meta.fight_name = $2 and ${emboldenedCheck} boon_output_stats.role = $3 and boon_output_stats.buff_id = $4`,
       [output, fightName, role, buffId]);
     return res.rows[0].percent_rank * 100;
   }
 
-  async getMechanicPercentile(fightName, mechanicName, occurrences) {
+  async getMechanicPercentile(fightName, mechanicName, occurrences, allowEmboldened = false) {
+    let emboldenedCheck = allowEmboldened ? '' : 'logs_meta.emboldened = false and';
     const res = await this.pool.query(
       `select percent_rank($1) within group (order by occurrences asc)
       from mechanics_stats left join logs_meta on mechanics_stats.log_id = logs_meta.log_id
-      where logs_meta.fight_name = $2 and mechanics_stats.mechanic_name = $3`,
+      where logs_meta.fight_name = $2 and ${emboldenedCheck} mechanics_stats.mechanic_name = $3`,
       [occurrences, fightName, mechanicName]);
     return res.rows[0].percent_rank * 100;
   }
 
-  async getDurationMsPercentile(fightName, durationMs) {
+  async getDurationMsPercentile(fightName, durationMs, allowEmboldened = false) {
+    let emboldenedCheck = allowEmboldened ? '' : 'logs_meta.emboldened = false and';
     const res = await this.pool.query(
       `select percent_rank($1) within group (order by duration_ms desc)
       from logs_meta
-      where logs_meta.fight_name = $2 and logs_meta.success = true`,
+      where logs_meta.fight_name = $2 and ${emboldenedCheck} logs_meta.success = true`,
       [durationMs, fightName]);
     return res.rows[0].percent_rank * 100;
   }
 
   async filterTargetDpsStats(query) {
-    const {role, fightName} = query;
+    const {role, fightName, allowEmboldened} = query;
+    let emboldenedCheck = allowEmboldened ? '' : 'logs_meta.emboldened = false and';
     let res;
     if (fightName) {
       res = await this.pool.query(
         `select (target_dps) from dps_stats
         left join logs_meta on dps_stats.log_id = logs_meta.log_id
-        where role = $1 and logs_meta.fight_name = $2`, [role, fightName]);
+        where role = $1 and ${emboldenedCheck} logs_meta.fight_name = $2`, [role, fightName]);
     } else {
       res = await this.pool.query(
         `select (target_dps) from dps_stats
@@ -776,17 +790,19 @@ class PGDatabase {
   }
 
   async filterMechanicStats(query) {
-    const {name, fightName} = query;
+    const {role, fightName, allowEmboldened} = query;
+    let emboldenedCheck = allowEmboldened ? '' : 'and logs_meta.emboldened = false';
     let res;
     if (fightName) {
       res = await this.pool.query(
         `select (occurrences) from mechanics_stats
         left join logs_meta on mechanics_stats.log_id = logs_meta.log_id
-        where mechanic_name = $1 and logs_meta.fight_name = $2`, [name, fightName]);
+        where mechanic_name = $1 and logs_meta.fight_name = $2 ${emboldenedCheck}`, [name, fightName]);
     } else {
       res = await this.pool.query(
         `select (occurrences) from mechanics_stats
-        where mechanic_name = $1`, [name]);
+        left join logs_meta on mechanics_stats.log_id = logs_meta.log_id
+        where mechanic_name = $1 ${emboldenedCheck}`, [name]);
     }
     return res.rows.map(row => row.occurrences);
   }
@@ -807,38 +823,43 @@ class PGDatabase {
   }
 
   async filterBoonOutputStats(query) {
-    const {role, buffId, fightName} = query;
+    const {role, buffId, fightName, allowEmboldened} = query;
+    let emboldenedCheck = allowEmboldened ? '' : 'and logs_meta.emboldened = false';
     let res;
     if (fightName) {
       res = await this.pool.query(
         `select (output) from boon_output_stats
         left join logs_meta on boon_output_stats.log_id = logs_meta.log_id
-        where role = $1 and buff_id = $2 and logs_meta.fight_name = $3`, [role, buffId, fightName]);
+        where role = $1 and buff_id = $2 and logs_meta.fight_name = $3 ${emboldenedCheck}`, [role, buffId, fightName]);
     } else {
       res = await this.pool.query(
         `select (output) from boon_output_stats
-        where role = $1 and buff_id = $2`, [role, buffId, fightName]);
+        left join logs_meta on boon_output_stats.log_id = logs_meta.log_id
+        where role = $1 and buff_id = $2 ${emboldenedCheck}`, [role, buffId, fightName]);
     }
     return res.rows.map(row => row.output);
   }
 
   async getBoonOutputRoles(query) {
-    const {buffId, fightName} = query;
+    const {buffId, fightName, allowEmboldened} = query;
+    let emboldenedCheck = allowEmboldened ? '' : 'and logs_meta.emboldened = false';
     let res;
     if (fightName) {
       res = await this.pool.query(
         `select distinct (role) from boon_output_stats
         left join logs_meta on boon_output_stats.log_id = logs_meta.log_id
-        where buff_id = $1 and logs_meta.fight_name = $2`, [buffId, fightName]);
+        where buff_id = $1 and logs_meta.fight_name = $2 ${emboldenedCheck}`, [buffId, fightName]);
     } else {
       res = await this.pool.query(
-        `select distinct (role) from boon_output_stats where buff_id = $1`, [buffId]);
+        `select distinct (role) from boon_output_stats
+        left join logs_meta on boon_output_stats.log_id = logs_meta.log_id
+        where buff_id = $1 ${emboldenedCheck}`, [buffId]);
     }
     return res.rows.map(row => row.role);
   }
 
   async getDpsLeaderboard(query, _jwt) {
-    let {fightName, role, _personal, all} = query;
+    let {fightName, role, _personal, all, allowEmboldened} = query;
     const limit = 10;
     if (fightName === 'Twin Largos') {
       all = true;
@@ -871,6 +892,9 @@ class PGDatabase {
       args.push(role);
     }
     conditions.push(`logs_meta.success = true`);
+    if (!allowEmboldened) {
+      conditions.push(`logs_meta.emboldened = false`);
+    }
     statement += ` where ` + conditions.join(' and ');
     statement += ` order by ${dpsOrder} desc limit $${args.length + 1}`;
     args.push(limit);
@@ -879,10 +903,11 @@ class PGDatabase {
   }
 
   async filterFightDurations(query) {
-    const {fightName} = query;
+    const {fightName, allowEmboldened} = query;
+    const emboldenedCheck = allowEmboldened ? '' : 'and emboldened = false'
     let res = await this.pool.query(
       `select (duration_ms) from logs_meta
-      where fight_name = $1 and success = true`, [fightName]);
+      where fight_name = $1 and success = true ${emboldenedCheck}`, [fightName]);
     return res.rows.map(row => row.duration_ms / 1000);
   }
 
