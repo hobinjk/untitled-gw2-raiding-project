@@ -16,6 +16,7 @@ export default function LogsListItem(props: any) {
   const {
     logId,
     success,
+    emboldened,
     fightName,
     timeStart,
     duration,
@@ -60,6 +61,9 @@ export default function LogsListItem(props: any) {
       const query = new URLSearchParams();
       query.set('fightName', fightName);
       query.set('durationMs', durationMs);
+      if (emboldened) {
+        query.set('allowEmboldened', 'true');
+      }
 
       const res = await API.fetch(`/api/v0/stats/percentiles/durationMs?${query.toString()}`);
       const percentile: number = (await res.json()).durationMsPercentile;
@@ -69,6 +73,7 @@ export default function LogsListItem(props: any) {
     })();
   }, []);
 
+  const emboldenedMarker = emboldened ? 'E' : '';
 
   return (
     <tr>
@@ -85,7 +90,7 @@ export default function LogsListItem(props: any) {
         {prettyStart}
       </td>
       <td>
-        <span title={durPrettyLong}>{makePercentile(durPretty, appState.percentile, false)}</span>
+        <span title={durPrettyLong + emboldenedMarker}>{makePercentile(durPretty, appState.percentile, false)}</span>
       </td>
       <td>
         <PlayersComposition players={players} />

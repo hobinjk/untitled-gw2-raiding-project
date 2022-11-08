@@ -75,6 +75,10 @@ function logStatsToString(logStats: ILogStats): string {
   let durMs = zeroPad((logStats.durationMs % 1000).toString(), 3)
   let durPretty = `${durM}:${durS}.${durMs}`;
   let durPercEmoji = Math.round(logStats.durationMsPercentile).toString();
+  if (logStats.log.emboldened) {
+    durPercEmoji += 'E';
+  }
+
   let failsBefore = '';
   for (let i = 0; i < logStats.failsBefore; i++) {
     failsBefore += ':skull_crossbones: ';

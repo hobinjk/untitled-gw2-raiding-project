@@ -43,6 +43,11 @@ export default function LogHeader(props: any) {
         <p>
           {log.success ? 'Success' : 'Failure'} in {log.duration}
         </p>
+        {log.meta.emboldened && (
+          <p>
+            Emboldened
+          </p>
+        )}
         <p>
           {log.timeStart}
         </p>

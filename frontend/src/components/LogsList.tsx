@@ -43,16 +43,17 @@ export default function LogsList(props: any) {
         </tr>
       </thead>
       <tbody>
-      {logs.map((log: any) => {
-        return (
-          <LogsListItem key={log.log_id} logId={log.log_id}
-            success={log.success} fightName={log.fight_name}
-            timeStart={log.time_start} duration={log.duration}
-            durationMs={log.duration_ms} players={log.players}
-            healthPercentBurned={log.health_percent_burned} tags={log.tags}
-            dpsReportLink={log.dps_report_link} />
-        );
-      })}
+        {logs.map((log: any) => {
+          return (
+            <LogsListItem key={log.log_id} logId={log.log_id}
+              success={log.success} emboldened={log.emboldened}
+              fightName={log.fight_name}
+              timeStart={log.time_start} duration={log.duration}
+              durationMs={log.duration_ms} players={log.players}
+              healthPercentBurned={log.health_percent_burned} tags={log.tags}
+              dpsReportLink={log.dps_report_link} />
+          );
+        })}
       </tbody>
     </table>
   );
