@@ -550,6 +550,7 @@ class PGDatabase {
       return;
     }
     const fightName = log.fightName;
+    const allowEmboldened = log.meta.emboldened;
     if (TIMING_ENABLED) {
       timings.getLogStats = performance.now();
     }
@@ -583,8 +584,8 @@ class PGDatabase {
       let allDps = dpsStatsByAccount[player.account].all_dps;
       let [targetDpsPercentile, allDpsPercentile] =
         await Promise.all([
-          this.getTargetDpsPercentile(fightName, player.role, targetDps),
-          this.getAllDpsPercentile(fightName, player.role, allDps),
+          this.getTargetDpsPercentile(fightName, player.role, targetDps, allowEmboldened),
+          this.getAllDpsPercentile(fightName, player.role, allDps, allowEmboldened),
         ]);
       if (TIMING_ENABLED) {
         timings.getDpsPercentiles.push({
@@ -604,8 +605,9 @@ class PGDatabase {
       let quickness = quicknessGeneration(player);
       let quicknessPercentile = quickness < 10 ?
         null :
-        await this.getBuffOutputPercentile(fightName, player.role,
-                                           buffIds.quickness, quickness);
+        await this.getBuffOutputPercentile(
+          fightName, player.role, buffIds.quickness, quickness,
+          allowEmboldened);
       if (TIMING_ENABLED && performance.now() - start > 1) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
@@ -616,8 +618,9 @@ class PGDatabase {
       let alacrity = alacrityGeneration(player);
       let alacrityPercentile = alacrity < 10 ?
         null :
-        await this.getBuffOutputPercentile(fightName, player.role,
-                                           buffIds.alacrity, alacrity);
+        await this.getBuffOutputPercentile(
+          fightName, player.role, buffIds.alacrity, alacrity,
+          allowEmboldened);
       if (TIMING_ENABLED && performance.now() - start > 1) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
@@ -628,8 +631,9 @@ class PGDatabase {
       let might = mightGeneration(player);
       let mightPercentile = might < 10 ?
         null :
-        await this.getBuffOutputPercentile(fightName, player.role,
-                                           buffIds.might, might);
+        await this.getBuffOutputPercentile(
+          fightName, player.role, buffIds.might, might,
+          allowEmboldened);
       if (TIMING_ENABLED && performance.now() - start > 1) {
         timings.getBuffOutputPercentile.push({
           time: performance.now() - start,
@@ -669,8 +673,8 @@ class PGDatabase {
           percentile = mechanicsCache[cacheKey];
         } else if (times > 0) {
           start = performance.now();
-          percentile = await this.getMechanicPercentile(fightName,
-                                                        mechanic.name, times);
+          percentile = await this.getMechanicPercentile(
+            fightName, mechanic.name, times, allowEmboldened);
           if (TIMING_ENABLED) {
             timings.getMechanicPercentile.push({
               time: performance.now() - start,
