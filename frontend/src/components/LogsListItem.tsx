@@ -6,7 +6,7 @@ import API from '../API';
 import makePrettyChronology from '../chrono';
 
 type ILogsListItemState = {
-  percentile: number|null,
+  percentile: number | null,
 };
 
 
@@ -31,7 +31,7 @@ export default function LogsListItem(props: any) {
     percentile: null,
   });
 
-  function queryPlus(qp: {[key:string]: string}) {
+  function queryPlus(qp: { [key: string]: string }) {
     let params = new URLSearchParams(location.search);
     params.delete('start');
 
@@ -84,7 +84,7 @@ export default function LogsListItem(props: any) {
         }
       </td>
       <td>
-        <Link to={`/logs?${queryPlus({fightName: fightName})}`}>{fightName}</Link>
+        <Link to={`/logs?${queryPlus({ fightName: fightName })}`}>{fightName}</Link>
       </td>
       <td>
         {prettyStart}
@@ -98,7 +98,7 @@ export default function LogsListItem(props: any) {
       <td>
         {tags.map((tag: string) => {
           return (<>
-            <Link to={`/logs?${queryPlus({tags: tag})}`}>{tag}</Link>
+            <Link to={`/logs?${queryPlus({ tags: tag })}`}>{tag}</Link>
           </>);
         })}
       </td>

@@ -11,9 +11,9 @@ export default function PlayersListItem(props: any) {
     <tr>
       <td>
         <div>
-          <h2 className="subtitle name">{ player.name } <span className="account">{ player.account }</span></h2>
+          <h2 className="subtitle name">{player.name} <span className="account">{player.account}</span></h2>
         </div>
-        <p><small>{ player.role }</small></p>
+        <p><small>{player.role}</small></p>
         <DPSBar log={log} stats={stats} />
       </td>
       <td>

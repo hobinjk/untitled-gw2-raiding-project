@@ -35,7 +35,7 @@ export default function LogHeader(props: any) {
         <p>
           Uploaded by {log.uploaderName}
           {log.deletable &&
-            <input className="button" type="button" value="Delete" onClick={onDelete}/>
+            <input className="button" type="button" value="Delete" onClick={onDelete} />
           }
         </p>
       </div>

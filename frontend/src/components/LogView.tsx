@@ -30,7 +30,7 @@ function LogView() {
       const resStats = await API.fetch(`/api/v0/logs/percentiles/${logId}`);
       const dataStats = await resStats.json();
 
-      const players: {[name: string]: boolean} = {};
+      const players: { [name: string]: boolean } = {};
       for (let player of log.players) {
         players[player.name] = true;
       }
