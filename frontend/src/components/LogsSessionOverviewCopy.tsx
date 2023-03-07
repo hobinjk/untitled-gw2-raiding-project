@@ -54,12 +54,14 @@ const specToEmoji: { [spec: string]: string } = {
 
 type ILogStats = {
   log: any,
+  success: boolean,
   dpsReportLink: string,
   durationMs: number,
   durationMsPercentile: number,
   downs: number,
   deaths: number,
   failsBefore: number,
+  finalPhase: string,
 }
 
 function zeroPad(n: string, len: number): string {
@@ -74,9 +76,12 @@ function logStatsToString(logStats: ILogStats): string {
   let durM = Math.floor(logStats.durationMs / (60 * 1000)).toString();
   let durMs = zeroPad((logStats.durationMs % 1000).toString(), 3)
   let durPretty = `${durM}:${durS}.${durMs}`;
-  let durPercEmoji = Math.round(logStats.durationMsPercentile).toString();
-  if (logStats.log.emboldened) {
-    durPercEmoji += 'E';
+  let durPercEmoji = '';
+  if (logStats.success) {
+    durPercEmoji = Math.round(logStats.durationMsPercentile).toString();
+    if (logStats.log.emboldened) {
+      durPercEmoji += 'E';
+    }
   }
 
   let failsBefore = '';
@@ -117,22 +122,26 @@ export default function LogsSessionOverviewCopy(props: any) {
         fails[log.fight_name] = 0;
       }
       fails[log.fight_name] += 1;
-      continue;
     }
     let durationMs = log.duration_ms;
     let failsBefore = fails[log.fight_name] || 0;
-    logStats.push({
+    const stats: ILogStats = {
       log: log,
+      success: log.success,
       dpsReportLink: log.dps_report_link,
       durationMs,
       durationMsPercentile: -1,
       downs: -1,
       deaths: -1,
       failsBefore,
-    });
+      finalPhase: '',
+    };
+    logStats.push(stats);
   }
 
-  const [appState, setAppState] = useState<ILogsSessionOverviewCopyState>({ logStats: logStats });
+  const [appState, setAppState] = useState<ILogsSessionOverviewCopyState>({
+    logStats: logStats,
+  });
 
   useEffect(() => {
     const load = async () => {
@@ -153,6 +162,18 @@ export default function LogsSessionOverviewCopy(props: any) {
           }
         }
 
+        if (log.phases && log.phases.length > 0) {
+          let finalPhaseName = log.phases[log.phases.length - 1].name;
+          for (let target of Array.from(log.targets).reverse() as Array<any>) {
+            if (target.name === finalPhaseName) {
+              finalPhaseName = target.healthPercentBurned.toFixed(1) + ' ' + finalPhaseName;
+              break;
+            }
+          }
+
+          logStats.finalPhase = finalPhaseName;
+        }
+
         const query = new URLSearchParams();
         query.set('fightName', logStats.log.fight_name)
         query.set('durationMs', logStats.durationMs.toString())
@@ -164,13 +185,23 @@ export default function LogsSessionOverviewCopy(props: any) {
       });
       await Promise.all(proms);
 
-      setAppState({ logStats: newLogStats });
+      setAppState({
+        logStats: newLogStats,
+      });
     }
     load();
   }, []);
 
+  const copySuccessStats = () => {
+    copyStats(appState.logStats.filter(ls => ls.success));
+  };
+
   const copyLogStats = () => {
-    let text = appState.logStats.map(logStats => {
+    copyStats(appState.logStats);
+  };
+
+  const copyStats = (stats: Array<ILogStats>) => {
+    let text = stats.map(logStats => {
       return logStatsToString(logStats);
     }).join('\n');
 
@@ -179,7 +210,8 @@ export default function LogsSessionOverviewCopy(props: any) {
 
   return (
     <div>
-      <input type="button" className="button" onClick={copyLogStats} value="Copy" />
+      <input type="button" className="button" onClick={copySuccessStats} value="Copy Wins" />
+      <input type="button" className="button" onClick={copyLogStats} value="Copy All" />
     </div>
   );
 }
