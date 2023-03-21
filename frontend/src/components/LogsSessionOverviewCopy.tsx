@@ -84,6 +84,8 @@ function logStatsToString(logStats: ILogStats): string {
     if (logStats.log.emboldened) {
       durPercEmoji += 'E';
     }
+  } else {
+    durPercEmoji = logStats.finalPhase;
   }
 
   let failsBefore = '';
