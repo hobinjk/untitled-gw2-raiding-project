@@ -71,6 +71,8 @@ function zeroPad(n: string, len: number): string {
   return n;
 }
 
+let prevComp = '';
+
 function logStatsToString(logStats: ILogStats): string {
   let durS = zeroPad(Math.floor((logStats.durationMs / 1000) % 60).toString(), 2);
   let durM = Math.floor(logStats.durationMs / (60 * 1000)).toString();
@@ -90,7 +92,12 @@ function logStatsToString(logStats: ILogStats): string {
   }
 
   let groupLast = -1;
-  let comp = logStats.log.players.map((player: any) => {
+  let comp = Array.from(logStats.log.players).sort((playerA: any, playerB: any) => {
+    if (playerA.group !== playerB.group) {
+      return playerA.group - playerB.group;
+    }
+    return playerA.role.localeCompare(playerB.role);
+  }).map((player: any) => {
     let group = player.group;
     if (groupLast < 0) {
       groupLast = group;
@@ -105,6 +112,11 @@ function logStatsToString(logStats: ILogStats): string {
     }
     return '';
   }).join('').trim();
+  if (comp === prevComp) {
+    comp = '';
+  } else {
+    prevComp = comp;
+  }
   return `${logStats.dpsReportLink} ${durPretty} ${durPercEmoji} ${failsBefore}\n` +
     `${comp}       ${logStats.downs}:small_red_triangle_down:   ${logStats.deaths}:skull:\n`;
 }
