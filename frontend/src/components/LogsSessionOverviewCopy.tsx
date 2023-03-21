@@ -89,8 +89,10 @@ function logStatsToString(logStats: ILogStats): string {
   }
 
   let failsBefore = '';
-  for (let i = 0; i < logStats.failsBefore; i++) {
-    failsBefore += ':skull_crossbones: ';
+  if (logStats.success) {
+    for (let i = 0; i < logStats.failsBefore; i++) {
+      failsBefore += ':skull_crossbones: ';
+    }
   }
 
   let groupLast = -1;
