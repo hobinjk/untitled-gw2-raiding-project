@@ -18,6 +18,9 @@ export function compressLog(log) {
     healing: true,
     toughness: true,
     profession: true,
+    targetDamage1S: true,
+    allDamage1S: true,
+    buffUptimes: true,
   };
 
   for (let player of log.players) {
