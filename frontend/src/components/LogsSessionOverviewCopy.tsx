@@ -1,5 +1,8 @@
 import API from '../API';
 import { useEffect, useState } from 'react';
+import { getRevealIncidentReport } from '../logAnalysis/getRevealIncidentReport';
+import { getMaxDpsReport } from '../logAnalysis/getMaxDpsReport';
+
 
 type ILogsSessionOverviewCopyState = {
   logStats: Array<ILogStats>
@@ -62,6 +65,7 @@ type ILogStats = {
   deaths: number,
   failsBefore: number,
   finalPhase: string,
+  revealIncidentReport: string,
 }
 
 function zeroPad(n: string, len: number): string {
@@ -121,8 +125,12 @@ function logStatsToString(logStats: ILogStats): string {
   } else {
     prevComp = comp;
   }
-  return `${logStats.dpsReportLink} ${durPretty} ${durPercEmoji} ${failsBefore}\n` +
+  let str = `${logStats.dpsReportLink} ${durPretty} ${durPercEmoji} ${failsBefore}\n` +
     `${comp}       ${logStats.downs}:small_red_triangle_down:   ${logStats.deaths}:skull:\n`;
+  if (logStats.revealIncidentReport) {
+    str += logStats.revealIncidentReport + '\n';
+  }
+  return str;
 }
 
 export default function LogsSessionOverviewCopy(props: any) {
@@ -151,9 +159,11 @@ export default function LogsSessionOverviewCopy(props: any) {
       deaths: -1,
       failsBefore,
       finalPhase: '',
+      revealIncidentReport: getRevealIncidentReport(log),
     };
     logStats.push(stats);
   }
+  let maxDpsReport = getMaxDpsReport(logs);
 
   const [appState, setAppState] = useState<ILogsSessionOverviewCopyState>({
     logStats: logStats,
@@ -220,6 +230,10 @@ export default function LogsSessionOverviewCopy(props: any) {
     let text = stats.map(logStats => {
       return logStatsToString(logStats);
     }).join('\n');
+
+    if (maxDpsReport) {
+      text += maxDpsReport;
+    }
 
     navigator.clipboard.writeText(text);
   };
