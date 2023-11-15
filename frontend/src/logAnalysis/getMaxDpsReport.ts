@@ -2,7 +2,8 @@ type IMaxDpsStats = {
   max: number,
   logUrl: string,
 };
-class MaxDpsAnalysis {
+
+export class MaxDpsAnalysis {
   stats: {[phaseName: string]: {[account: string]: IMaxDpsStats}} = {};
 
   constructor() {
@@ -26,7 +27,7 @@ class MaxDpsAnalysis {
     this.stats[phaseName][account].logUrl = logUrl;
   }
 
-  process(log: any) {
+  process(logUrl: string, log: any) {
     let phaseNames = [
       'Jormag',
       'Primordus',
@@ -50,10 +51,13 @@ class MaxDpsAnalysis {
       let targetIndex = phase.targets[0];
 
       for (let player of log.players) {
+        if (!player.targetDamage1S) {
+          continue;
+        }
         let damages = player.targetDamage1S[targetIndex][phaseIndex];
         let approxTargetDps = Math.round(damages.at(-1) / damages.length);
 
-        this.addTargetDps(log.dps_report_link, phaseName, player.account, approxTargetDps);
+        this.addTargetDps(logUrl, phaseName, player.account, approxTargetDps);
       }
     }
   }
@@ -88,12 +92,4 @@ class MaxDpsAnalysis {
     }
     return out;
   }
-}
-
-export function getMaxDpsReport(logs: Array<any>) {
-  const mda = new MaxDpsAnalysis();
-  for (const log of logs) {
-    mda.process(log);
-  }
-  return mda.toString();
 }

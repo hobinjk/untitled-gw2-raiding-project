@@ -1,7 +1,7 @@
 import API from '../API';
 import { useEffect, useState } from 'react';
 import { getRevealIncidentReport } from '../logAnalysis/getRevealIncidentReport';
-import { getMaxDpsReport } from '../logAnalysis/getMaxDpsReport';
+import { MaxDpsAnalysis } from '../logAnalysis/getMaxDpsReport';
 
 
 type ILogsSessionOverviewCopyState = {
@@ -159,11 +159,11 @@ export default function LogsSessionOverviewCopy(props: any) {
       deaths: -1,
       failsBefore,
       finalPhase: '',
-      revealIncidentReport: getRevealIncidentReport(log),
+      revealIncidentReport: '',
     };
     logStats.push(stats);
   }
-  let maxDpsReport = getMaxDpsReport(logs);
+  let maxDpsAnalysis = new MaxDpsAnalysis();
 
   const [appState, setAppState] = useState<ILogsSessionOverviewCopyState>({
     logStats: logStats,
@@ -200,6 +200,9 @@ export default function LogsSessionOverviewCopy(props: any) {
           logStats.finalPhase = finalPhaseName;
         }
 
+        logStats.revealIncidentReport = getRevealIncidentReport(log)
+        maxDpsAnalysis.process(logStats.dpsReportLink, log);
+
         const query = new URLSearchParams();
         query.set('fightName', logStats.log.fight_name)
         query.set('durationMs', logStats.durationMs.toString())
@@ -231,9 +234,7 @@ export default function LogsSessionOverviewCopy(props: any) {
       return logStatsToString(logStats);
     }).join('\n');
 
-    if (maxDpsReport) {
-      text += maxDpsReport;
-    }
+    text += '\n\nMax DPS by phase:' + maxDpsAnalysis.toString();
 
     navigator.clipboard.writeText(text);
   };

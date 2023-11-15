@@ -4,7 +4,17 @@
 
 const window = 10000;
 
-function addStateEvent(events, uptimeEvent) {
+type IAggregateEvent = {
+  time: number,
+  events: Array<IUptimeEvent>,
+};
+
+type IUptimeEvent = {
+  time: number,
+  name: string,
+};
+
+function addStateEvent(events: Array<IAggregateEvent>, uptimeEvent: IUptimeEvent) {
   for (let event of events) {
     if (Math.abs(event.time - uptimeEvent.time) > window) {
       continue;
@@ -18,7 +28,7 @@ function addStateEvent(events, uptimeEvent) {
   });
 }
 
-function addStateEvents(events, player, uptime) {
+function addStateEvents(events: Array<IAggregateEvent>, player: any, uptime: any) {
   const name = player.account.split('.')[0];
   for (let stateData of uptime.states) {
     let time = stateData[0];
@@ -33,16 +43,19 @@ function addStateEvents(events, player, uptime) {
   }
 }
 
-export function getRevealIncidentReport(log) {
+export function getRevealIncidentReport(log: any) {
   let out = '';
 
-  const stealthEvents = [];
-  const revealEvents = [];
+  const stealthEvents: Array<IAggregateEvent> = [];
+  const revealEvents: Array<IAggregateEvent> = [];
 
   const stealthBuff = 10269;
   const revealedBuff = 890;
 
   for (let player of log.players) {
+    if (!player.buffUptimes) {
+      continue;
+    }
     for (let uptime of player.buffUptimes) {
       if (uptime.id === revealedBuff) {
         addStateEvents(revealEvents, player, uptime);
