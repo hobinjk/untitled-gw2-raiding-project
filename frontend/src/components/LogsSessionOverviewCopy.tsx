@@ -55,7 +55,10 @@ const specToEmoji: { [spec: string]: string } = {
   'Spellbreaker': '0_warrior_spellbreaker',
 }
 
+type ILogMeta = any;
+
 type ILogStats = {
+  logMeta: ILogMeta,
   log: any,
   success: boolean,
   dpsReportLink: string,
@@ -85,7 +88,7 @@ function logStatsToString(logStats: ILogStats): string {
   let durPercEmoji = '';
   if (logStats.success) {
     durPercEmoji = Math.round(logStats.durationMsPercentile).toString();
-    if (logStats.log.emboldened) {
+    if (logStats.logMeta.emboldened) {
       durPercEmoji += 'E';
     }
   } else {
@@ -100,7 +103,7 @@ function logStatsToString(logStats: ILogStats): string {
   }
 
   let groupLast = -1;
-  let comp = Array.from(logStats.log.players).sort((playerA: any, playerB: any) => {
+  let comp = Array.from(logStats.logMeta.players).sort((playerA: any, playerB: any) => {
     if (playerA.group !== playerB.group) {
       return playerA.group - playerB.group;
     }
@@ -150,7 +153,8 @@ export default function LogsSessionOverviewCopy(props: any) {
     let durationMs = log.duration_ms;
     let failsBefore = fails[log.fight_name] || 0;
     const stats: ILogStats = {
-      log: log,
+      logMeta: log,
+      log: null,
       success: log.success,
       dpsReportLink: log.dps_report_link,
       durationMs,
@@ -163,7 +167,6 @@ export default function LogsSessionOverviewCopy(props: any) {
     };
     logStats.push(stats);
   }
-  let maxDpsAnalysis = new MaxDpsAnalysis();
 
   const [appState, setAppState] = useState<ILogsSessionOverviewCopyState>({
     logStats: logStats,
@@ -173,9 +176,10 @@ export default function LogsSessionOverviewCopy(props: any) {
     const load = async () => {
       const newLogStats = appState.logStats.map((obj: ILogStats) => Object.assign({}, obj));
       let proms = newLogStats.map(async (logStats) => {
-        const logId = logStats.log.log_id;
+        const logId = logStats.logMeta.log_id;
         const res = await API.fetch(`/api/v0/logs/${logId}`);
         const log = await res.json();
+        logStats.log = log;
         logStats.deaths = 0;
         logStats.downs = 0;
         for (let mechanic of log.mechanics) {
@@ -198,13 +202,13 @@ export default function LogsSessionOverviewCopy(props: any) {
           }
 
           logStats.finalPhase = finalPhaseName;
+
         }
 
         logStats.revealIncidentReport = getRevealIncidentReport(log)
-        maxDpsAnalysis.process(logStats.dpsReportLink, log);
 
         const query = new URLSearchParams();
-        query.set('fightName', logStats.log.fight_name)
+        query.set('fightName', logStats.logMeta.fight_name)
         query.set('durationMs', logStats.durationMs.toString())
         const resPerc = await API.fetch(`/api/v0/stats/percentiles/durationMs?${query.toString()}`);
         const percentile: number = (await resPerc.json()).durationMsPercentile;
@@ -234,6 +238,10 @@ export default function LogsSessionOverviewCopy(props: any) {
       return logStatsToString(logStats);
     }).join('\n');
 
+    const maxDpsAnalysis = new MaxDpsAnalysis();
+    for (let logStats of stats) {
+      maxDpsAnalysis.process(logStats.dpsReportLink, logStats.log);
+    }
     text += '\n\nMax DPS by phase:' + maxDpsAnalysis.toString();
 
     navigator.clipboard.writeText(text);
