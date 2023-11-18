@@ -1,4 +1,3 @@
-import React from 'react';
 import './LogsSessionTimeOverview.css';
 
 type IExtent = {
@@ -71,4 +70,3 @@ export default function LogsSessionTimeOverview(props: any) {
     </div>
   );
 }
-

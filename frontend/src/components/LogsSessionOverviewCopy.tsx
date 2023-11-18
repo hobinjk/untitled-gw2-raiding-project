@@ -1,12 +1,6 @@
-import API from '../API';
-import { useEffect, useState } from 'react';
-import { getRevealIncidentReport } from '../logAnalysis/getRevealIncidentReport';
 import { MaxDpsAnalysis } from '../logAnalysis/getMaxDpsReport';
 
-
-type ILogsSessionOverviewCopyState = {
-  logStats: Array<ILogStats>
-}
+import type {ILogStats} from './LogsSession';
 
 const specToEmoji: { [spec: string]: string } = {
   'Elementalist': '0_elementalist',
@@ -53,22 +47,6 @@ const specToEmoji: { [spec: string]: string } = {
   'Berserker': '0_warrior_berserker',
   'Bladesworn': '0_warrior_bladesworn',
   'Spellbreaker': '0_warrior_spellbreaker',
-}
-
-type ILogMeta = any;
-
-type ILogStats = {
-  logMeta: ILogMeta,
-  log: any,
-  success: boolean,
-  dpsReportLink: string,
-  durationMs: number,
-  durationMsPercentile: number,
-  downs: number,
-  deaths: number,
-  failsBefore: number,
-  finalPhase: string,
-  revealIncidentReport: string,
 }
 
 function zeroPad(n: string, len: number): string {
@@ -137,100 +115,14 @@ function logStatsToString(logStats: ILogStats): string {
 }
 
 export default function LogsSessionOverviewCopy(props: any) {
-  const { logs } = props;
-
-  let fails: { [fightName: string]: number } = {};
-
-  const logStats: Array<ILogStats> = [];
-
-  for (const log of logs) {
-    if (!log.success) {
-      if (!fails.hasOwnProperty(log.fight_name)) {
-        fails[log.fight_name] = 0;
-      }
-      fails[log.fight_name] += 1;
-    }
-    let durationMs = log.duration_ms;
-    let failsBefore = fails[log.fight_name] || 0;
-    const stats: ILogStats = {
-      logMeta: log,
-      log: null,
-      success: log.success,
-      dpsReportLink: log.dps_report_link,
-      durationMs,
-      durationMsPercentile: -1,
-      downs: -1,
-      deaths: -1,
-      failsBefore,
-      finalPhase: '',
-      revealIncidentReport: '',
-    };
-    logStats.push(stats);
-  }
-
-  const [appState, setAppState] = useState<ILogsSessionOverviewCopyState>({
-    logStats: logStats,
-  });
-
-  useEffect(() => {
-    const load = async () => {
-      const newLogStats = appState.logStats.map((obj: ILogStats) => Object.assign({}, obj));
-      let proms = newLogStats.map(async (logStats) => {
-        const logId = logStats.logMeta.log_id;
-        const res = await API.fetch(`/api/v0/logs/${logId}`);
-        const log = await res.json();
-        logStats.log = log;
-        logStats.deaths = 0;
-        logStats.downs = 0;
-        for (let mechanic of log.mechanics) {
-          for (let _occ of mechanic.mechanicsData) {
-            if (mechanic.name === 'Dead') {
-              logStats.deaths += 1;
-            } else if (mechanic.name === 'Downed') {
-              logStats.downs += 1;
-            }
-          }
-        }
-
-        if (log.phases && log.phases.length > 0) {
-          let finalPhaseName = log.phases[log.phases.length - 1].name;
-          for (let target of Array.from(log.targets).reverse() as Array<any>) {
-            if (target.name === finalPhaseName) {
-              finalPhaseName = target.healthPercentBurned.toFixed(1) + ' ' + finalPhaseName;
-              break;
-            }
-          }
-
-          logStats.finalPhase = finalPhaseName;
-
-        }
-
-        logStats.revealIncidentReport = getRevealIncidentReport(log)
-
-        const query = new URLSearchParams();
-        query.set('fightName', logStats.logMeta.fight_name)
-        query.set('durationMs', logStats.durationMs.toString())
-        const resPerc = await API.fetch(`/api/v0/stats/percentiles/durationMs?${query.toString()}`);
-        const percentile: number = (await resPerc.json()).durationMsPercentile;
-        logStats.durationMsPercentile = percentile;
-
-        return logStats;
-      });
-      await Promise.all(proms);
-
-      setAppState({
-        logStats: newLogStats,
-      });
-    }
-    load();
-  }, []);
+  const logStats: Array<ILogStats> = props.logStats;
 
   const copySuccessStats = () => {
-    copyStats(appState.logStats.filter(ls => ls.success));
+    copyStats(logStats.filter(ls => ls.success));
   };
 
   const copyLogStats = () => {
-    copyStats(appState.logStats);
+    copyStats(logStats);
   };
 
   const copyStats = (stats: Array<ILogStats>) => {
