@@ -1,52 +1,61 @@
 import { MaxDpsAnalysis } from '../logAnalysis/getMaxDpsReport';
 
-import type {ILogStats} from './LogsSession';
+import type { ILogStats } from './LogsSession';
 
 const specToEmoji: { [spec: string]: string } = {
   'Elementalist': '0_elementalist',
   'Catalyst': '0_elementalist_catalyst',
   'Tempest': '0_elementalist_tempest',
-  'Weaver': '0_elementalist_catalyst',
+  'Weaver': '0_elementalist_weaver',
+  'Evoker': '0_elementalist_evoker',
 
   'Engineer': '0_engineer',
   'Holosmith': '0_engineer_holosmith',
   'Mechanist': '0_engineer_mechanist',
   'Scrapper': '0_engineer_scrapper',
+  'Amalgam': '0_engineer_amalgam',
 
   'Guardian': '0_guardian',
   'Dragonhunter': '0_guardian_dragonhunter',
   'Firebrand': '0_guardian_firebrand',
   'Willbender': '0_guardian_willbender',
+  'Luminary': '0_guardian_luminary',
 
   'Mesmer': '0_mesmer',
   'Chronomancer': '0_mesmer_chronomancer',
   'Mirage': '0_mesmer_mirage',
   'Virtuoso': '0_mesmer_virtuoso',
+  'Troubadour': '0_mesmer_troubadour',
 
   'Necromancer': '0_necromancer',
   'Harbinger': '0_necromancer_harbinger',
   'Reaper': '0_necromancer_reaper',
   'Scourge': '0_necromancer_scourge',
+  'Ritualist': '0_necromancer_ritualist',
 
   'Ranger': '0_ranger',
   'Druid': '0_ranger_druid',
   'Soulbeast': '0_ranger_soulbeast',
   'Untamed': '0_ranger_untamed',
+  'Galeshot': '0_ranger_galeshot',
 
   'Revenant': '0_revenant',
   'Herald': '0_revenant_herald',
   'Renegade': '0_revenant_renegade',
   'Vindicator': '0_revenant_vindicator',
+  'Conduit': '0_revenant_conduit',
 
   'Thief': '0_thief',
   'Daredevil': '0_thief_daredevil',
   'Deadeye': '0_thief_deadeye',
   'Specter': '0_thief_specter',
+  'Antiquary': '0_thief_antiquary',
 
   'Warrior': '0_warrior',
   'Berserker': '0_warrior_berserker',
   'Bladesworn': '0_warrior_bladesworn',
   'Spellbreaker': '0_warrior_spellbreaker',
+  'Paragon': '0_warrior_paragon',
 }
 
 function zeroPad(n: string, len: number): string {
